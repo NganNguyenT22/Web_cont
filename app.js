@@ -280,24 +280,29 @@ function renderTableQuanLyLenh(data = dataQuanLyLenh) {
 }
 
 function searchBooking() {
-
     const keyword = document
         .getElementById('search-booking')
         .value
         .trim()
         .toLowerCase();
 
+    // Nếu người dùng xóa hết chữ và bấm tìm kiếm, hiển thị lại toàn bộ bảng
+    if (!keyword) {
+        renderTableQuanLyLenh(dataQuanLyLenh);
+        return;
+    }
+
     const filtered = dataQuanLyLenh.filter(row => {
-
-        return (
-            row["Booking ID"] ||
-            ''
-        )
-        .toLowerCase()
-        .includes(keyword);
-
+        // Kiểm tra tất cả các trường hợp viết hoa viết thường của Booking ID từ API
+        const bookingIdRaw = row["Booking ID"] || row["Booking id"] || row["BOOKING ID"] || "";
+        
+        return bookingIdRaw
+            .toString()
+            .toLowerCase()
+            .includes(keyword);
     });
 
+    // Cập nhật lại giao diện hiển thị với danh sách đã lọc
     renderTableQuanLyLenh(filtered);
 }
 
