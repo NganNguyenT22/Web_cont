@@ -172,13 +172,30 @@
         }
         //======Adding QLLenh
         //======adding giaonhan
+// ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN =================
 function switchGiaoNhanTab(type) {
     currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại
-    loadGiaoNhanData(type);    // Gọi hàm tải dữ liệu tương ứng
+    
+    // Cập nhật giao diện class active cho các nút bấm tab nếu có
+    const btnHaRong = document.getElementById('btn-tab-harong');
+    const btnCapRong = document.getElementById('btn-tab-caprong');
+    if(btnHaRong && btnCapRong) {
+        if(type === 'HaRong') {
+            btnHaRong.classList.add('active');
+            btnCapRong.classList.remove('active');
+        } else {
+            btnCapRong.classList.add('active');
+            btnHaRong.classList.remove('active');
+        }
+    }
+    
+    // Tải dữ liệu mới cho tab được chọn
+    loadGiaoNhanData(type);    
 }
 
 // Bộ nhớ đệm lưu dữ liệu hạ rỗng toàn cục phục vụ tra cứu
 window.globalHaRongData = [];
+window.globalCapRongData = [];
 
 async function loadGiaoNhanData(type) {
     showLoading(true);
@@ -195,8 +212,10 @@ async function loadGiaoNhanData(type) {
         }
     } catch (e) {
         console.error("Lỗi tải dữ liệu giao nhận (" + type + "):", e);
+        alert("Không thể tải dữ liệu tab " + type + ". Vui lòng thử lại!");
+    } finally {
+        showLoading(false); // Chắc chắn tắt loader, không lo bị kẹt màn hình
     }
-    showLoading(false);
 }
         //======adding giaonhan
 
