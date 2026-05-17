@@ -211,3 +211,26 @@ body {
     background: #d4edda;
     color: #155724;
 }
+@media print {
+    body * {
+        visibility: hidden; /* Ẩn toàn bộ trang web */
+    }
+    #eirModal, #eirModal * {
+        visibility: visible; /* Chỉ hiển thị duy nhất khung cửa sổ EIR */
+    }
+    #eirModal {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        border: none;
+        box-shadow: none;
+    }
+    .modal-footer, .btn-close {
+        display: none !important; /* Ẩn các nút điều khiển form khi in */
+    }
+    .modal-header {
+        background-color: #000 !important;
+        color: #fff !important;
+    }
+}
