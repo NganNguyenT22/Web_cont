@@ -196,11 +196,13 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
 window.globalHaRongData = [];
 window.globalCapRongData = [];
 
-// ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN ĐÃ FIX LỖI GHI ĐÈ =================
+// ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN ĐÃ FIX LỖI GHI ĐÈ & MODAL =================
+
+// 1. Hàm chuyển đổi giữa các Tab Hạ Rỗng / Cấp Rỗng (Nếu bạn dùng giao diện Tab chung)
 function switchGiaoNhanTab(type) {
-    currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại
+    currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại ('HaRong' hoặc 'CapRong')
     
-    // Cập nhật giao diện class active cho các nút bấm tab
+    // Cập nhật giao diện class active cho các nút bấm tab trên màn hình
     const btnHaRong = document.getElementById('btn-tab-harong');
     const btnCapRong = document.getElementById('btn-tab-caprong');
     if(btnHaRong && btnCapRong) {
@@ -213,10 +215,12 @@ function switchGiaoNhanTab(type) {
         }
     }
     
-    // Tải dữ liệu mới cho tab được chọn
-    loadGiaoNhanData(type);    
+    // Đã FIX: Chuyển đổi từ định dạng Tab sang định dạng tên Sheet tương ứng để gọi API chuẩn
+    const sheetParam = (type === 'HaRong') ? 'ContNhap' : 'ContCap';
+    loadGiaoNhanDataExplicit(sheetParam);    
 }
 
+// 2. Hàm nạp dữ liệu từ Google App Script về bóc tách độc lập
 async function loadGiaoNhanDataExplicit(sheetType) {
     showLoading(true);
     try {
@@ -226,7 +230,7 @@ async function loadGiaoNhanDataExplicit(sheetType) {
         if (sheetType === 'ContNhap') {
             dataNhap = data;
             renderHaRongTableExplicit(dataNhap);
-        } else {
+        } else if (sheetType === 'ContCap') {
             dataCap = data;
             renderCapRongTableExplicit(dataCap);
         }
@@ -236,7 +240,7 @@ async function loadGiaoNhanDataExplicit(sheetType) {
     showLoading(false);
 }
 
-// Đổ dữ liệu riêng cho bảng Hạ Rỗng
+// 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng
 function renderHaRongTableExplicit(data) {
     let html = "";
     if(!data || data.length === 0) {
@@ -246,7 +250,7 @@ function renderHaRongTableExplicit(data) {
             const d = new Date(row["Ngày nhập bãi"] || row["Ngày thực hiện"]);
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || ''}</td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || ''}</td>
                 <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
                 <td class="fw-bold text-primary">${row["Số Container"] || ''}</td>
                 <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
@@ -259,10 +263,13 @@ function renderHaRongTableExplicit(data) {
             </tr>`;
         });
     }
-    document.getElementById('tbody-harong-explicit').innerHTML = html;
+    
+    // Tự động kiểm tra ID phần tử đích để tránh crash code nếu bạn tách trang riêng biệt
+    const targetTarget = document.getElementById('tbody-harong-explicit') || document.getElementById('tbody-harong');
+    if(targetTarget) targetTarget.innerHTML = html;
 }
 
-// Đổ dữ liệu riêng cho bảng Cấp Rỗng
+// 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng
 function renderCapRongTableExplicit(data) {
     let html = "";
     if(!data || data.length === 0) {
@@ -272,7 +279,7 @@ function renderCapRongTableExplicit(data) {
             const d = new Date(row["Ngày thực hiện"]);
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || ''}</td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || ''}</td>
                 <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
                 <td class="fw-bold text-success">${row["Số Container"] || ''}</td>
                 <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
@@ -285,25 +292,66 @@ function renderCapRongTableExplicit(data) {
             </tr>`;
         });
     }
-    document.getElementById('tbody-caprong-explicit').innerHTML = html;
+    
+    const targetTarget = document.getElementById('tbody-caprong-explicit') || document.getElementById('tbody-caprong');
+    if(targetTarget) targetTarget.innerHTML = html;
 }
 
+// 5. Hàm mở Modal Tạo Lệnh Giao Nhận EIR (Đã chuyển đổi sang Bootstrap 5 Vanilla JS chuẩn)
 function openGiaoNhanModalExplicit(loaiHinh) {
+    // Lưu loại hình hiện tại vào biến global để đồng bộ biểu mẫu lúc nhấn nút Lưu
+    currentGiaoNhanTab = loaiHinh; 
+
     const titleObj = document.getElementById('giaoNhanModalLabel');
     if(titleObj) {
         titleObj.innerText = loaiHinh === 'HaRong' ? 'Lập Lệnh Hạ Rỗng (Nhập Bãi)' : 'Lập Lệnh Cấp Rỗng (Xuất Bãi)';
     }
-    const hiddenInput = document.getElementById('gn_loaihinh_hidden');
+
+    // Đổ dữ liệu vào input ẩn nếu form của bạn sử dụng cấu trúc phân loại ẩn
+    const hiddenInput = document.getElementById('gn_loaihinh_hidden') || document.getElementById('gn_loaihinh');
     if(hiddenInput) hiddenInput.value = loaiHinh;
     
-    // Reset và bật modal form gốc của bạn lên
-    const form = document.getElementById('form-giaonhan-submit');
+    // Reset và xóa các vết dữ liệu cũ trên form tránh ghi đè nhầm
+    const form = document.getElementById('form-giaonhan-submit') || document.getElementById('form-giaonhan');
     if(form) form.reset();
     
+    // Đã FIX: Sử dụng bộ dựng Modal chuẩn của Bootstrap 5 thay thế cho cú pháp JQuery ($().modal) cũ
     const modalElement = document.getElementById('modalGiaoNhan');
     if(modalElement) {
-        const modal = new bootstrap.Modal(modalElement);
-        modal.show();
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modalInstance.show();
+    } else {
+        console.error("Không tìm thấy thẻ HTML có id='modalGiaoNhan' trong dự án!");
+    }
+}
+
+// 6. Đã FIX: Hàm mở Modal Đề xuất hạ (Đồng nhất tên hàm viết hoa chữ X từ nút bấm)
+function openDeXuatHaModal(rowIndex, container, hangtau, size) {
+    if(document.getElementById('dx_rowIndex')) document.getElementById('dx_rowIndex').value = rowIndex || '';
+    if(document.getElementById('dx_container')) document.getElementById('dx_container').value = container || '';
+    if(document.getElementById('dx_hangtau')) document.getElementById('dx_hangtau').value = hangtau || '';
+    if(document.getElementById('dx_size')) document.getElementById('dx_size').value = size || '';
+    
+    if(document.getElementById('dx_khuvuc')) document.getElementById('dx_khuvuc').value = '';
+    
+    const modalElement = document.getElementById('modalDeXuatHa');
+    if (modalElement) {
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modalInstance.show();
+    } else {
+        alert("Lỗi: Không tìm thấy giao diện Modal Đề xuất hạ (id='modalDeXuatHa')!");
+    }
+}
+
+// 7. Đã FIX: Đoạn kết thúc xử lý của hàm Tra Cứu Vị Trí Container
+// Bạn hãy tìm hàm timKiemViTri() hiện tại của bạn, ở dòng cuối cùng thay thế lệnh cũ bằng khối này:
+function openTraCuuModalExplicit() {
+    const modalElement = document.getElementById('modalTraCuu') || document.getElementById('modalTraCuuKetQua');
+    if(modalElement) {
+        const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
+        modalInstance.show();
+    } else {
+        console.error("Không tìm thấy giao diện Modal Tra cứu vị trí!");
     }
 }
         //======adding giaonhan
