@@ -6,6 +6,8 @@
         let dataUsers = [];
         let chartInstance = null;
 
+        let dataQuanLyLenh = [];
+
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
         const showLoading = (s) => document.getElementById('loader').style.display = s ? 'flex' : 'none';
 
@@ -78,6 +80,9 @@
             if(pageId === 'page-cont-nhap') loadData('ContNhap');
             if(pageId === 'page-cont-cap') loadData('ContCap');
             if(pageId === 'page-users') loadUsers(); // Gọi load dữ liệu Users
+          
+          if(pageId === 'page-quanlylenh') loadQuanLyLenh();
+          
         }
 
         // ================= 3. TẢI DỮ LIỆU TỪ GOOGLE SHEETS =================
@@ -158,7 +163,179 @@
             });
             document.getElementById('tbody-cap').innerHTML = html || '<tr><td colspan="10" class="text-center">Trống</td></tr>';
         }
+        //======Adding QLLenh
+async function loadQuanLyLenh() {
 
+    showLoading(true);
+
+    try {
+
+        const res = await fetch(API_URL + "?type=QuanLyLenh");
+
+        dataQuanLyLenh = await res.json();
+
+        renderTableQuanLyLenh();
+
+    } catch(e) {
+
+        console.error(e);
+
+    }
+
+    showLoading(false);
+}
+
+function renderTableQuanLyLenh(data = dataQuanLyLenh) {
+
+    let html = "";
+
+    data.forEach((row, index) => {
+
+        if(row["Status"] === "ACCEPTED") return;
+
+        const now = new Date();
+
+        const expireDate = new Date(row["Ngày hạn"]);
+
+        const isValid = now <= expireDate;
+
+        html += `
+        <tr>
+
+            <td>${row["STT"] || index + 1}</td>
+
+            <td>
+                <span class="badge bg-primary">
+                    ${row["Hãng tàu"] || ''}
+                </span>
+            </td>
+
+            <td class="fw-bold text-dark">
+                ${row["Booking ID"] || ''}
+            </td>
+
+            <td>
+
+                ${
+                    row["Yêu cầu"] === "Hạ rỗng"
+
+                    ?
+
+                    `<span class="badge bg-danger">
+                        Hạ rỗng
+                    </span>`
+
+                    :
+
+                    `<span class="badge bg-success">
+                        Cấp rỗng
+                    </span>`
+                }
+
+            </td>
+
+            <td>
+                ${row["Ngày bắt đầu"] || ''}
+            </td>
+
+            <td class="${isValid ? '' : 'text-danger fw-bold'}">
+                ${row["Ngày hạn"] || ''}
+            </td>
+
+            <td class="text-center">
+
+                ${
+                    isValid
+
+                    ?
+
+                    `<button
+                        class="btn btn-sm btn-success"
+                        onclick="acceptBooking('${row["Booking ID"]}', ${row.rowIndex})"
+                    >
+                        <i class="bi bi-check-lg"></i>
+                    </button>`
+
+                    :
+
+                    `<span class="badge bg-danger">
+                        Hết hạn
+                    </span>`
+                }
+
+            </td>
+
+        </tr>
+        `;
+    });
+
+    document.getElementById('tbody-quanlylenh').innerHTML =
+        html ||
+        '<tr><td colspan="7" class="text-center">Không có dữ liệu</td></tr>';
+}
+
+function searchBooking() {
+
+    const keyword = document
+        .getElementById('search-booking')
+        .value
+        .trim()
+        .toLowerCase();
+
+    const filtered = dataQuanLyLenh.filter(row => {
+
+        return (
+            row["Booking ID"] ||
+            ''
+        )
+        .toLowerCase()
+        .includes(keyword);
+
+    });
+
+    renderTableQuanLyLenh(filtered);
+}
+
+async function acceptBooking(bookingId, rowIndex) {
+
+    if(!confirm("Xác nhận chấp nhận lệnh này?")) return;
+
+    showLoading(true);
+
+    try {
+
+        await fetch(API_URL, {
+
+            method: "POST",
+
+            mode: "no-cors",
+
+            body: JSON.stringify({
+
+                sheetType: "QuanLyLenh",
+
+                action: "acceptBooking",
+
+                bookingId: bookingId,
+
+                rowIndex: rowIndex
+
+            })
+        });
+
+        setTimeout(() => {
+
+            loadQuanLyLenh();
+
+        }, 1200);
+
+    } catch(e) {
+
+        console.error(e);
+
+        showLoading(false);
+    }
+}
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
         const dataModal = new bootstrap.Modal(document.getElementById('dataModal'));
 
