@@ -40,11 +40,16 @@
                         showLoading(false);
                         return;
                     }
-                } catch (err) {
-                    alert("Lỗi kết nối API khi kiểm tra tài khoản!");
-                    showLoading(false);
-                    return;
-                }
+                }catch (err) {
+    // 1. In lỗi chi tiết ra Console để lập trình viên kiểm tra
+    console.error("Lỗi API chi tiết:", err); 
+    
+    // 2. Cải tiến thông báo để biết lỗi cụ thể là gì (ví dụ: đứt mạng, hay sai URL)
+    alert("Lỗi kết nối API: " + err.message); 
+    
+    showLoading(false);
+    return;
+}
             }
 
             document.getElementById('user-fullname').innerText = currentUser.name;
