@@ -1,0 +1,92 @@
+:root {
+    --sidebar-width: 260px;
+    --primary: #0d47a1;
+    --dark: #1a233a;
+}
+
+body {
+    font-family: 'Segoe UI', sans-serif;
+    background: #f4f7fe;
+    overflow-x: hidden;
+    margin: 0;
+}
+
+#login-screen {
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #0d47a1 0%, #1976d2 100%);
+}
+
+.login-box {
+    background: white;
+    padding: 40px;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 400px;
+}
+
+#app-screen {
+    display: none;
+}
+
+.sidebar {
+    width: var(--sidebar-width);
+    height: 100vh;
+    background: var(--dark);
+    position: fixed;
+    color: white;
+}
+
+.sidebar-brand {
+    padding: 20px;
+    text-align: center;
+    font-weight: bold;
+    border-bottom: 1px solid #2d2d3f;
+}
+
+.user-box {
+    background: rgba(255,255,255,0.05);
+}
+
+.nav-link {
+    color: #a2a3b7;
+    padding: 12px 25px;
+    cursor: pointer;
+}
+
+.nav-link:hover,
+.nav-link.active {
+    background: #27314f;
+    color: white;
+}
+
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: 20px;
+}
+
+.page {
+    display: none;
+}
+
+.page.active {
+    display: block;
+}
+
+.card {
+    border: none;
+    border-radius: 10px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
+#loader {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.8);
+    z-index: 9999;
+    justify-content: center;
+    align-items: center;
+}
