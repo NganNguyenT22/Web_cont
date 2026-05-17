@@ -86,8 +86,7 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
         }
 
         // ================= 2. ĐIỀU HƯỚNG TRANG =================
-       // ================= 2. ĐIỀU HƯỚNG TRANG =================
-        function switchPage(pageId) {
+function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
     
@@ -105,7 +104,7 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
     if(pageId === 'page-users') loadUsers();
     if(pageId === 'page-quanlylenh') loadQuanLyLenh();
     
-    // Đã sửa: Đồng bộ chính xác ID trang Giao Nhận độc lập theo Tab mặc định ban đầu là Hạ Rỗng
+    // Đã đồng bộ tích hợp: Điều hướng trang Giao Nhận bóc tách độc lập
     if(pageId === 'page-harong' || pageId === 'page-giaonhan') { 
         switchGiaoNhanTab('HaRong'); 
     }
@@ -206,8 +205,8 @@ function switchGiaoNhanTab(type) {
     currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại ('HaRong' hoặc 'CapRong')
     
     // Cập nhật giao diện class active cho các nút bấm tab trên màn hình
-    const btnHaRong = document.getElementById('btn-tab-harong');
-    const btnCapRong = document.getElementById('btn-tab-caprong');
+    const btnHaRong = document.getElementById('btn-tab-harong') || document.getElementById('tab-harong');
+    const btnCapRong = document.getElementById('btn-tab-caprong') || document.getElementById('tab-caprong');
     if(btnHaRong && btnCapRong) {
         if(type === 'HaRong') {
             btnHaRong.classList.add('active');
@@ -231,11 +230,11 @@ async function loadGiaoNhanDataExplicit(sheetType) {
         const data = await res.json();
         
         if (sheetType === 'ContNhap') {
-            window.globalHaRongData = data; // ĐÃ SỬA: Lưu vào biến giao nhận hạ rỗng chuyên dụng
+            window.globalHaRongData = data; // Lưu vào biến giao nhận hạ rỗng chuyên dụng
             dataNhap = data;                // Cập nhật dự phòng cho bộ dữ liệu nền
             renderHaRongTableExplicit(window.globalHaRongData);
         } else if (sheetType === 'ContCap') {
-            window.globalCapRongData = data; // ĐÃ SỬA: Lưu vào biến giao nhận cấp rỗng chuyên dụng
+            window.globalCapRongData = data; // Lưu vào biến giao nhận cấp rỗng chuyên dụng
             dataCap = data;                 // Cập nhật dự phòng cho bộ dữ liệu nền
             renderCapRongTableExplicit(window.globalCapRongData);
         }
@@ -248,16 +247,16 @@ async function loadGiaoNhanDataExplicit(sheetType) {
 // 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng (Hỗ trợ đọc dữ liệu linh hoạt)
 function renderHaRongTableExplicit(data) {
     let html = "";
-    // ĐÃ SỬA: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
+    // Đã sửa: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
     const sourceData = data || window.globalHaRongData || [];
     
     if(!sourceData || sourceData.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử hạ rỗng.</td></tr>`;
     } else {
-        sourceData.forEach(row => {
+        sourceData.forEach((row, index) => {
             // Dự phòng linh hoạt lỗi viết hoa viết thường của key thuộc tính từ Google Sheet
             const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
-            const eirNo = row["Số lệnh"] || row["Số Lệnh"] || row["Số lệnh"] || '-';
+            const eirNo = row["Số lệnh"] || row["Số Lệnh"] || '-';
             const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
             const size = row["Size"] || row["Kích cỡ"] || '';
             const viTriBai = row["Bãi"] || row["Vị trí bãi"] || row["Vị trí"] || 'Chưa xếp';
@@ -266,7 +265,7 @@ function renderHaRongTableExplicit(data) {
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
             
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || ''}</td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || (index + 1)}</td>
                 <td class="fw-bold text-dark">${eirNo}</td>
                 <td class="fw-bold text-primary">${containerNo}</td>
                 <td>${hangTau}</td>
@@ -283,17 +282,16 @@ function renderHaRongTableExplicit(data) {
     const targetTarget = document.getElementById('tbody-harong-explicit') || document.getElementById('tbody-harong') || document.getElementById('tbody-giaonhan');
     if(targetTarget) targetTarget.innerHTML = html;
 }
-
 // 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng (Hỗ trợ đọc dữ liệu linh hoạt)
 function renderCapRongTableExplicit(data) {
     let html = "";
-    // ĐÃ SỬA: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
+    // Đã sửa: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
     const sourceData = data || window.globalCapRongData || [];
     
     if(!sourceData || sourceData.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử cấp rỗng.</td></tr>`;
     } else {
-        sourceData.forEach(row => {
+        sourceData.forEach((row, index) => {
             const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
             const eirNo = row["Số lệnh"] || row["Số Lệnh"] || '-';
             const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
@@ -304,7 +302,7 @@ function renderCapRongTableExplicit(data) {
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
             
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || ''}</td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || (index + 1)}</td>
                 <td class="fw-bold text-dark">${eirNo}</td>
                 <td class="fw-bold text-success">${containerNo}</td>
                 <td>${hangTau}</td>
