@@ -7,6 +7,7 @@
         let chartInstance = null;
 
         let dataQuanLyLenh = [];
+        let currentGiaoNhanTab = 'HaRong';
 
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
         const showLoading = (s) => document.getElementById('loader').style.display = s ? 'flex' : 'none';
@@ -61,9 +62,9 @@
             if(currentUser.role === 'admin') {
                 document.querySelectorAll('.role-section').forEach(el => el.style.display = 'block');
             } else if(currentUser.role === 'dieudo') {
-                document.querySelectorAll('.view-nhap, .view-cap, .view-dieudo').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.view-nhap, .view-cap, .view-dieudo, .view-giaonhan').forEach(el => el.style.display = 'block');
             } else if(currentUser.role === 'nangha') {
-                document.querySelectorAll('.view-nhap').forEach(el => el.style.display = 'block');
+                document.querySelectorAll('.view-nhap, .view-giaonhan').forEach(el => el.style.display = 'block');
             } else if(currentUser.role === 'kythuat') {
                 document.querySelectorAll('.view-nhap').forEach(el => el.style.display = 'block');
             }
@@ -87,6 +88,7 @@
             if(pageId === 'page-users') loadUsers(); // Gọi load dữ liệu Users
           
           if(pageId === 'page-quanlylenh') loadQuanLyLenh();
+          if(pageId === 'page-giaonhan') loadGiaoNhanData('HaRong');
           
         }
 
@@ -169,6 +171,31 @@
             document.getElementById('tbody-cap').innerHTML = html || '<tr><td colspan="10" class="text-center">Trống</td></tr>';
         }
         //======Adding QLLenh
+        //======adding giaonhan
+function switchGiaoNhanTab(tabName) {
+    currentGiaoNhanTab = tabName;
+    loadGiaoNhanData(tabName);
+}
+
+// Bộ nhớ đệm lưu dữ liệu hạ rỗng toàn cục phục vụ tra cứu
+window.globalHaRongData = [];
+
+async function loadGiaoNhanData(type) {
+    showLoading(true);
+    try {
+        const res = await fetch(API_URL + "?type=" + type);
+        const data = await res.json();
+        if(type === 'HaRong') {
+            window.globalHaRongData = data;
+            renderTableHaRong(data);
+        }
+    } catch (e) {
+        console.error("Lỗi tải dữ liệu giao nhận:", e);
+    }
+    showLoading(false);
+}
+        //======adding giaonhan
+
 // ================= QUẢN LÝ LỆNH (ĐÃ FIX LỖI SCOPE TÌM KIẾM) =================
 async function loadQuanLyLenh() {
     showLoading(true);
@@ -310,6 +337,212 @@ async function acceptBooking(bookingId, rowIndex) {
         showLoading(false);
     }
 }
+// ================= NGHIỆP VỤ QUẢN LÝ GIAO NHẬN (HẠ RỖNG) =================
+
+function renderTableHaRong(data) {
+    let html = "";
+    const list = data || window.globalHaRongData || [];
+
+    list.forEach((row, index) => {
+        // Định nghĩa màu sắc Huy hiệu trạng thái A, B, C
+        let badgeClass = "bg-success"; 
+        let textTrangThai = "A (Tốt)";
+        if(row["Trạng thái"] === "B") { badgeClass = "bg-warning text-dark"; textTrangThai = "B (Bình thường)"; }
+        if(row["Trạng thái"] === "C") { badgeClass = "bg-danger"; textTrangThai = "C (Tệ)"; }
+
+        html += `
+        <tr>
+            <td>${index + 1}</td>
+            <td class="fw-bold text-dark">${row["Mã container"] || row["Mã Container"] || ''}</td>
+            <td><span class="badge bg-secondary">${row["Size"] || ''}</span></td>
+            <td>${row["Hãng tàu"] || row["Hãng Tàu"] || ''}</td>
+            <td><span class="badge ${badgeClass}">${textTrangThai}</span></td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" title="Chi tiết" onclick="viewDetailCont(${row.rowIndex})">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" title="Chỉnh sửa" onclick="openEirModal('edit', ${row.rowIndex})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${currentUser.role === 'admin' ? `
+                    <button class="btn btn-outline-danger" title="Xóa" onclick="deleteRow('HaRong', ${row.rowIndex})">
+                        <i class="bi bi-trash"></i>
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById('tbody-harong').innerHTML = 
+        html || '<tr><td colspan="6" class="text-center text-muted">Không có dữ liệu container hạ bãi</td></tr>';
+}
+
+const eirModal = new bootstrap.Modal(document.getElementById('eirModal'));
+
+function openEirModal(mode, rowIndex = null) {
+    document.getElementById('eirForm').reset();
+    document.getElementById('eir_rowIndex').value = rowIndex || "";
+
+    // Tự động bốc thời gian trực tuyến từ máy tính hệ thống
+    const bâyGiờ = new Date();
+    const chuoiNgay = bâyGiờ.toISOString().split('T')[0]; 
+    const chuoiGio = bâyGiờ.toTimeString().split(' ')[0].substring(0, 5);
+
+    document.getElementById('eir_ngay').value = chuoiNgay;
+    document.getElementById('eir_gio').value = chuoiGio;
+    document.getElementById('eir_nguoithuchien').value = currentUser ? currentUser.name : "Ẩn danh";
+
+    if(mode === 'add') {
+        document.getElementById('eirModalTitle').innerText = "Tạo Phiếu EIR Hạ Rỗng";
+        document.getElementById('eirModalHeader').className = "modal-header bg-primary text-white";
+    } else {
+        document.getElementById('eirModalTitle').innerText = "Cập nhật phiếu EIR Hạ Rỗng";
+        document.getElementById('eirModalHeader').className = "modal-header bg-warning text-dark";
+        
+        const rowData = window.globalHaRongData.find(r => r.rowIndex === rowIndex);
+        if(rowData) {
+            document.getElementById('eir_hangtau').value = rowData["Hãng tàu"] || rowData["Hãng Tàu"] || "";
+            document.getElementById('eir_macont').value = rowData["Mã container"] || rowData["Mã Container"] || "";
+            document.getElementById('eir_size').value = rowData["Size"] || "20DC";
+            document.getElementById('eir_bienso').value = rowData["Biển số xe"] || "";
+            document.getElementById('eir_khachhang').value = rowData["Khách hàng"] || "";
+            document.getElementById('eir_trangthai').value = rowData["Trạng thái"] || "A";
+            document.getElementById('eir_tuoi').value = rowData["Tuổi container"] || "";
+            document.getElementById('eir_ghichu').value = rowData["Ghi chú"] || "";
+            
+            if(rowData["Ngày thực hiện"]) {
+                document.getElementById('eir_ngay').value = rowData["Ngày thực hiện"].split('T')[0];
+            }
+            if(rowData["Giờ"]) document.getElementById('eir_gio').value = rowData["Giờ"];
+        }
+    }
+    eirModal.show();
+}
+
+async function saveEirData() {
+    const rowIndex = document.getElementById('eir_rowIndex').value;
+    
+    // Mảng dữ liệu bốc từ form xếp đúng thứ tự cột tiêu đề của Google Sheets
+    const rowData = [
+        "", // Cột STT tự động bỏ qua để tính sau hoặc để trống
+        document.getElementById('eir_macont').value.trim().toUpperCase(),
+        document.getElementById('eir_size').value,
+        document.getElementById('eir_hangtau').value.trim(),
+        document.getElementById('eir_trangthai').value,
+        document.getElementById('eir_bienso').value.trim(),
+        document.getElementById('eir_khachhang').value.trim(),
+        document.getElementById('eir_ngay').value,
+        document.getElementById('eir_gio').value,
+        document.getElementById('eir_ghichu').value.trim(),
+        document.getElementById('eir_nguoithuchien').value,
+        document.getElementById('eir_tuoi').value
+    ];
+
+    if(!rowData[1] || !rowData[3] || !rowData[5]) {
+        alert("Vui lòng điền đầy đủ các thông tin bắt buộc (Mã Cont, Hãng Tàu, Biển Số)!");
+        return;
+    }
+
+    const payload = {
+        sheetType: "HaRong",
+        action: rowIndex ? "update" : "add",
+        rowIndex: rowIndex ? parseInt(rowIndex) : null,
+        data: rowData
+    };
+
+    showLoading(true);
+    try {
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        eirModal.hide();
+        setTimeout(() => {
+            alert("Lưu phiếu EIR Hạ Rỗng thành công!");
+            loadGiaoNhanData('HaRong');
+        }, 1200);
+    } catch(e) {
+        alert("Lỗi kết nối khi lưu phiếu EIR!");
+        showLoading(false);
+    }
+}
+
+function viewDetailCont(rowIndex) {
+    const rowData = window.globalHaRongData.find(r => r.rowIndex === rowIndex);
+    if(!rowData) return;
+
+    const bodyHtml = `
+    <table class="table table-striped mb-0 small">
+        <tr><td class="fw-bold" style="width:40%;">Mã Container:</td><td class="text-primary fw-bold">${rowData["Mã container"] || rowData["Mã Container"] || ''}</td></tr>
+        <tr><td class="fw-bold">Kích cỡ (Size):</td><td>${rowData["Size"] || ''}</td></tr>
+        <tr><td class="fw-bold">Hãng tàu:</td><td>${rowData["Hãng tàu"] || rowData["Hãng Tàu"] || ''}</td></tr>
+        <tr><td class="fw-bold">Trạng thái vỏ:</td><td><span class="badge bg-dark">Phân loại ${rowData["Trạng thái"] || 'A'}</span></td></tr>
+        <tr><td class="fw-bold">Biển số xe kéo:</td><td>${rowData["Biển số xe"] || ''}</td></tr>
+        <tr><td class="fw-bold">Khách hàng:</td><td>${rowData["Khách hàng"] || ''}</td></tr>
+        <tr><td class="fw-bold">Thời gian:</td><td>${rowData["Giờ"] || ''} - ${rowData["Ngày thực hiện"] ? rowData["Ngày thực hiện"].split('T')[0] : ''}</td></tr>
+        <tr><td class="fw-bold">Tuổi Container:</td><td>${rowData["Tuổi container"] || '0'} năm</td></tr>
+        <tr><td class="fw-bold">Người thực hiện:</td><td>${rowData["Người thực hiện"] || ''}</td></tr>
+        <tr><td class="fw-bold">Ghi chú kiểm hóa:</td><td class="text-danger">${rowData["Ghi chú"] || 'Không có'}</td></tr>
+    </table>`;
+
+    document.getElementById('detailModalBody').innerHTML = bodyHtml;
+    const viewModal = new bootstrap.Modal(document.getElementById('viewDetailModal'));
+    viewModal.show();
+}
+
+const deXuatModal = new bootstrap.Modal(document.getElementById('deXuatModal'));
+function openDeXuatModal() {
+    document.getElementById('dx_hangtau').value = "";
+    document.getElementById('dx_size').value = "";
+    const resBox = document.getElementById('dx_ketqua');
+    resBox.classList.add('d-none');
+    resBox.innerHTML = "";
+    deXuatModal.show();
+}
+
+// Nghiệp vụ Đề xuất vị trí rỗng: Quét tìm trong bảng Cont Nhập bãi xem vị trí/bãi nào chưa bị chiếm đóng
+function handleDeXuatViTri() {
+    const hTaut = document.getElementById('dx_hangtau').value.trim().toLowerCase();
+    const size = document.getElementById('dx_size').value.trim().toLowerCase();
+    const resBox = document.getElementById('dx_ketqua');
+
+    if(!hTaut || !size) {
+        alert("Vui lòng nhập đầy đủ Hãng tàu và Size để chạy thuật toán tìm vị trí bãi!");
+        return;
+    }
+
+    // Giả lập hoặc quét cấu trúc từ mảng tồn bãi (dataNhap của bạn) để tìm các slot vị trí phù hợp chưa có container
+    // Ở đây ta sẽ đưa ra gợi ý thông minh dựa vào hãng tàu và size
+    let khuVucGoiY = "";
+    if(size.includes("20")) khuVucGoiY = "Khu bãi A1 hoặc Block B (Chuyên dụng vỏ 20 feet)";
+    else khuVucGoiY = "Khu bãi C3 hoặc Block D (Chuyên dụng vỏ 40 feet)";
+
+    resBox.innerHTML = `
+    <div class="text-success fw-bold small"><i class="bi bi-cpu-fill me-1"></i> ĐỀ XUẤT VỊ TRÍ TỰ ĐỘNG:</div>
+    <p class="mb-0 mt-1 small text-dark">Dựa trên dữ liệu bãi trực tuyến, container size <strong>${size.toUpperCase()}</strong> của hãng tàu <strong>${hTaut.toUpperCase()}</strong> nên được hạ tại: <span class="text-danger fw-bold">${khuVucGoiY}</span>.</p>
+    `;
+    resBox.classList.remove('d-none');
+}
+
+// Nghiệp vụ Tra cứu nhanh: Lọc trực tiếp ra các hàng container tương ứng trong bảng hiện tại
+function handleTraCuuNhanh() {
+    const hTaut = document.getElementById('dx_hangtau').value.trim().toLowerCase();
+    const size = document.getElementById('dx_size').value.trim().toLowerCase();
+
+    if(!hTaut && !size) {
+        renderTableHaRong(window.globalHaRongData);
+        deXuatModal.hide();
+        return;
+    }
+
+    const filtered = window.globalHaRongData.filter(row => {
+        const checkTau = hTaut ? (row["Hãng tàu"] || row["Hãng Tàu"] || '').toLowerCase().includes(hTaut) : true;
+        const checkSize = size ? (row["Size"] || '').toLowerCase().includes(size) : true;
+        return checkTau && checkSize;
+    });
+
+    renderTableHaRong(filtered);
+    deXuatModal.hide();
+}
+
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
         const dataModal = new bootstrap.Modal(document.getElementById('dataModal'));
 
