@@ -87,26 +87,30 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
 
         // ================= 2. ĐIỀU HƯỚNG TRANG =================
         function switchPage(pageId) {
-            document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-            document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
-            document.getElementById(pageId).classList.add('active');
-            event.currentTarget.classList.add('active');
-            document.getElementById('page-title').innerText = event.currentTarget.innerText;
-            
-            if(pageId === 'page-cont-nhap') loadData('ContNhap');
-            if(pageId === 'page-cont-cap') loadData('ContCap');
-            if(pageId === 'page-users') loadUsers(); // Gọi load dữ liệu Users
-            
-          if(pageId === 'page-quanlylenh') loadQuanLyLenh();
-          if(pageId === 'page-giaonhan') loadGiaoNhanData('HaRong');
-          if (pageId === 'page-quanlytinhtrang') {
-              fetchGiamDinhData();
-          } else if (pageId === 'page-suachua') {
-              renderSuaChuaPage();
-          }
-          
-        }
-
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+    
+    const targetPage = document.getElementById(pageId);
+    if(targetPage) targetPage.classList.add('active');
+    
+    if(event && event.currentTarget) {
+        event.currentTarget.classList.add('active');
+        document.getElementById('page-title').innerText = event.currentTarget.innerText;
+    }
+    
+    // Logic gọi nạp dữ liệu chuẩn xác cho từng trang biệt lập
+    if(pageId === 'page-cont-nhap') loadData('ContNhap');
+    if(pageId === 'page-cont-cap') loadData('ContCap');
+    if(pageId === 'page-users') loadUsers();
+    if(pageId === 'page-quanlylenh') loadQuanLyLenh();
+    
+    // Kích hoạt nạp dữ liệu riêng biệt theo yêu cầu của bạn:
+    if(pageId === 'page-harong') loadGiaoNhanDataExplicit('ContNhap'); // Đọc sheet ContNhap cấp cho Hạ Rỗng
+    if(pageId === 'page-caprong') loadGiaoNhanDataExplicit('ContCap'); // Đọc sheet ContCap cấp cho Cấp Rỗng
+    
+    if(pageId === 'page-quanlytinhtrang') fetchGiamDinhData();
+    if(pageId === 'page-suachua') renderSuaChuaPage();
+}
         // ================= 3. TẢI DỮ LIỆU TỪ GOOGLE SHEETS =================
         async function initDashboard() {
             if(API_URL.includes("DÁN_LINK")) return;
@@ -213,24 +217,93 @@ function switchGiaoNhanTab(type) {
     loadGiaoNhanData(type);    
 }
 
-async function loadGiaoNhanData(type) {
+async function loadGiaoNhanDataExplicit(sheetType) {
     showLoading(true);
     try {
-        const res = await fetch(API_URL + "?type=" + type);
+        const res = await fetch(API_URL + "?type=" + sheetType);
         const data = await res.json();
         
-        if(type === 'HaRong') {
-            window.globalHaRongData = data;
-            renderTableHaRong(data);
-        } else if(type === 'CapRong') {
-            window.globalCapRongData = data; // Nạp dữ liệu vào bộ nhớ cấp rỗng
-            renderTableCapRong(data);         // Tiến hành dựng bảng dữ liệu
+        if (sheetType === 'ContNhap') {
+            dataNhap = data;
+            renderHaRongTableExplicit(dataNhap);
+        } else {
+            dataCap = data;
+            renderCapRongTableExplicit(dataCap);
         }
     } catch (e) {
-        console.error("Lỗi tải dữ liệu giao nhận (" + type + "):", e);
-        alert("Không thể tải dữ liệu tab " + type + ". Vui lòng thử lại!");
-    } finally {
-        showLoading(false); // Đảm bảo luôn tắt loader giải phóng màn hình
+        console.error("Lỗi đồng bộ danh mục giao nhận rỗng:", e);
+    }
+    showLoading(false);
+}
+
+// Đổ dữ liệu riêng cho bảng Hạ Rỗng
+function renderHaRongTableExplicit(data) {
+    let html = "";
+    if(!data || data.length === 0) {
+        html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử hạ rỗng.</td></tr>`;
+    } else {
+        data.forEach(row => {
+            const d = new Date(row["Ngày nhập bãi"] || row["Ngày thực hiện"]);
+            const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
+            html += `<tr>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || ''}</td>
+                <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
+                <td class="fw-bold text-primary">${row["Số Container"] || ''}</td>
+                <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
+                <td><span class="badge bg-light text-dark border">${row["Size"] || ''}</span></td>
+                <td><small>${dateStr}</small></td>
+                <td><span class="badge bg-primary px-2 py-1">${row["Bãi"] || row["Vị trí bãi"] || 'Chưa xếp'}</span></td>
+                <td class="text-center">
+                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${row["Số lệnh"] || row["Số Lệnh"]}', 'HaRong')"><i class="bi bi-printer"></i> EIR</button>
+                </td>
+            </tr>`;
+        });
+    }
+    document.getElementById('tbody-harong-explicit').innerHTML = html;
+}
+
+// Đổ dữ liệu riêng cho bảng Cấp Rỗng
+function renderCapRongTableExplicit(data) {
+    let html = "";
+    if(!data || data.length === 0) {
+        html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử cấp rỗng.</td></tr>`;
+    } else {
+        data.forEach(row => {
+            const d = new Date(row["Ngày thực hiện"]);
+            const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
+            html += `<tr>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || ''}</td>
+                <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
+                <td class="fw-bold text-success">${row["Số Container"] || ''}</td>
+                <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
+                <td><span class="badge bg-light text-dark border">${row["Size"] || ''}</span></td>
+                <td><small>${dateStr}</small></td>
+                <td><small class="text-muted">${row["Ghi chú"] || row["Giao"] || '-'}</small></td>
+                <td class="text-center">
+                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${row["Số lệnh"] || row["Số Lệnh"]}', 'CapRong')"><i class="bi bi-printer"></i> EIR</button>
+                </td>
+            </tr>`;
+        });
+    }
+    document.getElementById('tbody-caprong-explicit').innerHTML = html;
+}
+
+function openGiaoNhanModalExplicit(loaiHinh) {
+    const titleObj = document.getElementById('giaoNhanModalLabel');
+    if(titleObj) {
+        titleObj.innerText = loaiHinh === 'HaRong' ? 'Lập Lệnh Hạ Rỗng (Nhập Bãi)' : 'Lập Lệnh Cấp Rỗng (Xuất Bãi)';
+    }
+    const hiddenInput = document.getElementById('gn_loaihinh_hidden');
+    if(hiddenInput) hiddenInput.value = loaiHinh;
+    
+    // Reset và bật modal form gốc của bạn lên
+    const form = document.getElementById('form-giaonhan-submit');
+    if(form) form.reset();
+    
+    const modalElement = document.getElementById('modalGiaoNhan');
+    if(modalElement) {
+        const modal = new bootstrap.Modal(modalElement);
+        modal.show();
     }
 }
         //======adding giaonhan
