@@ -62,7 +62,17 @@
                 <a class="nav-link role-section view-cap" onclick="switchPage('page-cont-cap')"><i class="bi bi-box-arrow-up-right"></i> QL. Cấp Rỗng</a>
                 <!--adding-->
                 <a class="nav-link role-section view-dieudo" onclick="switchPage('page-quanlylenh')"> <i class="bi bi-clipboard-check"></i> QL. Lệnh</a>
-                <a href="#" class="nav-link text-white role-section view-giaonhan" onclick="switchPage('page-giaonhan')"><i class="bi bi-truck me-2"></i> QL. Giao Nhận</a>
+                
+                <div class="menu-item" id="menu-harong" onclick="showPage('harong')">
+                    <i class="bi bi-arrow-down-square-fill text-primary me-2"></i>
+                        <span>Hạ Rỗng (Nhập Bãi)</span>
+                            </div>
+
+                    <div class="menu-item" id="menu-caprong" onclick="showPage('caprong')">
+                    <i class="bi bi-arrow-up-square-fill text-success me-2"></i>
+                    <span>Cấp Rỗng (Xuất Bãi)</span>
+                </div>
+                <!---->
                 <div id="menu-giamdinh-wrapper" class="d-none">
     <hr class="text-white-50 my-2">
     <div class="sidebar-dropdown">
@@ -385,52 +395,72 @@
     </div>
 </div>
             <!-- adding Giao nhan-->
-            <div id="page-giaonhan" class="page">
-    <div class="card p-3 mb-3 shadow-sm border-0">
-        <ul class="nav nav-pills mb-3" id="pills-tab" role="tablist">
-            <li class="nav-item" role="presentation">
-                <button class="nav-link active fw-bold" id="tab-harong" data-bs-toggle="pill" data-bs-target="#content-harong" type="button" onclick="switchGiaoNhanTab('HaRong')">
-                    <i class="bi bi-box-arrow-in-down me-1"></i> Hạ Rỗng
-                </button>
-            </li>
-            <li class="nav-item" role="presentation">
-                <button class="nav-link fw-bold" id="tab-caprong" data-bs-toggle="pill" data-bs-target="#content-caprong" type="button" onclick="switchGiaoNhanTab('CapRong')">
-                    <i class="bi bi-box-arrow-up me-1"></i> Cấp Rỗng
-                </button>
-            </li>
-        </ul>
+           <div id="page-harong" class="app-page container-fluid py-4 d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Quản Lý Hạ Rỗng (Nhập Bãi)</h4>
+            <p class="text-muted small mb-0">Danh sách container hạ rỗng về depot lưu bãi</p>
+        </div>
+        <button class="btn btn-primary shadow-sm" onclick="openGiaoNhanModal('HaRong')">
+            <i class="bi bi-plus-circle-fill me-1"></i> Tạo Lệnh Hạ Rỗng
+        </button>
+    </div>
+    
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light fw-bold text-secondary text-uppercase small">
+                    <tr>
+                        <th class="ps-3" style="width: 60px;">STT</th>
+                        <th>Số Lệnh EIR</th>
+                        <th>Mã Container</th>
+                        <th>Hãng Tàu</th>
+                        <th>Kích Cỡ</th>
+                        <th>Ngày Nhập</th>
+                        <th>Vị Trí Bãi</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-harong">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
 
-        <div class="tab-content" id="pills-tabContent">
-            <div class="tab-pane fade show active" id="content-harong" role="tabpanel">
-                <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
-                    <h6 class="fw-bold mb-0 text-dark text-uppercase"><i class="bi bi-list-task me-1"></i> Danh sách container hạ rỗng</h6>
-                    <div class="d-flex gap-2">
-                        <button class="btn btn-primary btn-sm fw-bold" onclick="openEirModal('add')">
-                            <i class="bi bi-plus-lg me-1"></i> Tạo phiếu EIR
-                        </button>
-                        <button class="btn btn-light btn-sm border fw-bold text-dark" onclick="openDeXuatModal()">
-                            <i class="bi bi-lightbulb me-1"></i> Đề xuất / Tra cứu vị trí
-                        </button>
-                    </div>
-                </div>
-                <div class="table-responsive">
-                    <table class="table table-hover align-middle border">
-                        <thead>
-                            <tr>
-                                <th style="width: 60px;">STT</th>
-                                <th>Mã Container</th>
-                                <th>Size</th>
-                                <th>Hãng Tàu</th>
-                                <th>Trạng Thái</th>
-                                <th class="text-center" style="width: 180px;">Thao tác</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tbody-harong">
-                            </tbody>
-                    </table>
-                </div>
-            </div>
-
+<div id="page-caprong" class="app-page container-fluid py-4 d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Quản Lý Cấp Rỗng (Xuất Bãi)</h4>
+            <p class="text-muted small mb-0">Danh sách cấp container rỗng cho khách hàng đóng hàng</p>
+        </div>
+        <button class="btn btn-success shadow-sm" onclick="openGiaoNhanModal('CapRong')">
+            <i class="bi bi-plus-circle-fill me-1"></i> Tạo Lệnh Cấp Rỗng
+        </button>
+    </div>
+    
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light fw-bold text-secondary text-uppercase small">
+                    <tr>
+                        <th class="ps-3" style="width: 60px;">STT</th>
+                        <th>Số Lệnh EIR</th>
+                        <th>Mã Container</th>
+                        <th>Hãng Tàu</th>
+                        <th>Kích Cỡ</th>
+                        <th>Ngày Cấp</th>
+                        <th>Khách Hàng / Trạng trạng</th>
+                        <th class="text-end pe-3">Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-caprong">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<!---->
 <div class="tab-pane fade" id="content-caprong" role="tabpanel">
     <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
         <h6 class="fw-bold mb-0 text-dark text-uppercase">
