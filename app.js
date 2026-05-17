@@ -173,6 +173,11 @@
         //======Adding QLLenh
         //======adding giaonhan
 // ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN =================
+// Khai báo biến lưu trữ toàn cục cho Giao Nhận (Đặt ở đầu file hoặc trên đầu cụm hàm giao nhận)
+window.globalHaRongData = [];
+window.globalCapRongData = [];
+
+// ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN ĐÃ FIX LỖI GHI ĐÈ =================
 function switchGiaoNhanTab(type) {
     currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại
     
@@ -193,11 +198,6 @@ function switchGiaoNhanTab(type) {
     loadGiaoNhanData(type);    
 }
 
-
-// Bộ nhớ đệm lưu dữ liệu hạ rỗng toàn cục phục vụ tra cứu
-window.globalHaRongData = [];
-window.globalCapRongData = [];
-
 async function loadGiaoNhanData(type) {
     showLoading(true);
     try {
@@ -208,14 +208,14 @@ async function loadGiaoNhanData(type) {
             window.globalHaRongData = data;
             renderTableHaRong(data);
         } else if(type === 'CapRong') {
-            window.globalCapRongData = data;
-            renderTableCapRong(data);
+            window.globalCapRongData = data; // Nạp dữ liệu vào bộ nhớ cấp rỗng
+            renderTableCapRong(data);         // Tiến hành dựng bảng dữ liệu
         }
     } catch (e) {
         console.error("Lỗi tải dữ liệu giao nhận (" + type + "):", e);
         alert("Không thể tải dữ liệu tab " + type + ". Vui lòng thử lại!");
     } finally {
-        showLoading(false); // Đảm bảo luôn tắt loader để tránh treo/kẹt màn hình
+        showLoading(false); // Đảm bảo luôn tắt loader giải phóng màn hình
     }
 }
         //======adding giaonhan
@@ -817,6 +817,7 @@ function openDeXuatCapModal() {
 // Xử lý đề xuất xuất bãi (Cấp rỗng) an toàn
 // Xử lý đề xuất xuất bãi (Cấp rỗng) an toàn và tự động đồng bộ kho bãi tồn
 async function handleDeXuatCap() {
+    // Tự động nhận diện cả ID cũ 'dx_' và ID mới 'dxc_' để tránh lỗi lệch file HTML
     const elHtau = document.getElementById('dxc_hangtau') || document.getElementById('dx_hangtau');
     const elSize = document.getElementById('dxc_size') || document.getElementById('dx_size');
     const elTthai = document.getElementById('dxc_trangthai') || document.getElementById('dx_trangthai');
@@ -832,23 +833,21 @@ async function handleDeXuatCap() {
     const tthai = elTthai ? elTthai.value : "";
 
     if (!htau || !size) {
-        alert("Vui lòng nhập đầy đủ Hãng tàu và Size để hệ thống tính toán tồn bãi!");
+        alert("Vui lòng chọn đầy đủ Hãng tàu và Kích cỡ để hệ thống tính toán đề xuất!");
         return;
     }
 
-    // SỬA LỖI SCOPE: Nếu dữ liệu tồn bãi dataNhap chưa được tải, tự động tải trực tuyến ngay lập tức
+    // KHẮC PHỤC LỖI SCOPE: Nếu dữ liệu tồn bãi dataNhap chưa được nạp, tự động fetch từ sheet về ngay
     if (!dataNhap || dataNhap.length === 0) {
-        showLoading(true);
         try {
             const res = await fetch(API_URL + "?type=ContNhap");
             dataNhap = await res.json();
         } catch (err) {
-            console.error("Không thể kết nối kho bãi tồn để lấy dữ liệu đề xuất:", err);
+            console.error("Không thể kết nối bãi để tính toán vỏ phù hợp:", err);
         }
-        showLoading(false);
     }
 
-    // Tiến hành quét tìm container phù hợp nhất trong bãi tồn rỗng
+    // Quét tìm vỏ rỗng tối ưu đang nằm trong bãi
     const optimalCont = dataNhap.find(row => {
         const lineVal = (row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || "").toString().toLowerCase();
         const sizeVal = (row["Size"] || "").toString().toLowerCase();
@@ -868,17 +867,16 @@ async function handleDeXuatCap() {
             const hangCont = optimalCont["Trạng thái"] || optimalCont["Phân loại"] || 'A';
             box.innerHTML = `
             <div class="alert alert-success m-0 p-2 small">
-                <i class="bi bi-cpu-fill me-1"></i><strong>ĐỀ XUẤT XUẤT BÃI THÀNH CÔNG:</strong><br>
-                Khuyên dùng vỏ: <strong class="text-primary">${codeCont}</strong> (Hạng ${hangCont}).<br>
-                Vị trí hiện tại trong bãi: <span class="badge bg-danger">${viTriBai}</span>
+                <i class="bi bi-cpu-fill me-1"></i><strong>ĐỀ XUẤT CONTAINER PHÙ HỢP:</strong><br>
+                Nên cấp container vỏ số: <strong class="text-primary text-uppercase">${codeCont}</strong> (Hạng ${hangCont}).<br>
+                Vị trí bãi hiện tại: <span class="badge bg-danger">${viTriBai}</span>
             </div>`;
         } else {
-            box.innerHTML = `<div class="alert alert-warning m-0 p-2 small text-center">Không tìm thấy vỏ container nào khớp cấu hình trong kho bãi tồn rỗng hiện tại!</div>`;
+            box.innerHTML = `<div class="alert alert-warning m-0 p-2 small text-center">Không tìm thấy vỏ container nào khớp cấu hình yêu cầu trong kho bãi tồn!</div>`;
         }
     }
 }
 
-// Xử lý tra cứu nhanh cấp rỗng
 function handleTraCuuCap() {
     const elHtau = document.getElementById('dxc_hangtau') || document.getElementById('dx_hangtau');
     const elSize = document.getElementById('dxc_size') || document.getElementById('dx_size');
@@ -888,9 +886,9 @@ function handleTraCuuCap() {
     const size = elSize ? elSize.value.trim().toLowerCase() : "";
     const tthai = elTthai ? elTthai.value : "";
 
+    // Nếu không nhập bộ lọc, khôi phục bảng cấp rỗng đầy đủ ban đầu
     if (!htau && !size && !tthai) {
         renderTableCapRong(window.globalCapRongData);
-        if(typeof deXuatCapModal !== 'undefined') deXuatCapModal.hide();
         return;
     }
 
@@ -907,7 +905,7 @@ function handleTraCuuCap() {
 
     renderTableCapRong(filterResult);
     
-    // Tự động đóng modal tra cứu sau khi lọc thành công
+    // Tự động đóng modal tra cứu bằng API an toàn
     const modalEl = document.getElementById('deXuatCapModal');
     if(modalEl) {
         const m = bootstrap.Modal.getInstance(modalEl);
