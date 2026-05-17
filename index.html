@@ -60,7 +60,8 @@
                 <!-- Menu hiển thị linh hoạt theo chức năng -->
                 <a class="nav-link role-section view-nhap" onclick="switchPage('page-cont-nhap')"><i class="bi bi-box-arrow-in-right"></i> QL. Nhập Bãi / Vị trí</a>
                 <a class="nav-link role-section view-cap" onclick="switchPage('page-cont-cap')"><i class="bi bi-box-arrow-up-right"></i> QL. Cấp Rỗng</a>
-                
+                <!--adding-->
+                <a class="nav-link role-section view-dieudo" onclick="switchPage('page-quanlylenh')"> <i class="bi bi-clipboard-check"></i> QL. Lệnh</a>
                 <!-- Admin Tools -->
                 <div class="role-section view-admin">
                     <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Quản trị</div>
@@ -164,7 +165,65 @@
                     </div>
                 </div>
             </div>
+<!--Adding QlLenh-->
+<div id="page-quanlylenh" class="page">
+    <div class="card shadow-sm p-3">
 
+        <div class="d-flex justify-content-between align-items-center mb-3">
+            <h6 class="fw-bold m-0 text-warning">
+                <i class="bi bi-clipboard-check me-2"></i>
+                QUẢN LÝ LỆNH
+            </h6>
+
+            <div class="d-flex gap-2">
+
+                <input
+                    type="text"
+                    class="form-control form-control-sm"
+                    id="search-booking"
+                    placeholder="Booking ID"
+                >
+
+                <button
+                    class="btn btn-warning btn-sm"
+                    onclick="searchBooking()"
+                >
+                    <i class="bi bi-search"></i>
+                </button>
+
+                <button
+                    class="btn btn-outline-secondary btn-sm"
+                    onclick="loadQuanLyLenh()"
+                >
+                    <i class="bi bi-arrow-clockwise"></i>
+                </button>
+
+            </div>
+        </div>
+
+        <div class="table-responsive">
+            <table class="table table-hover align-middle text-nowrap">
+
+                <thead class="table-light">
+                    <tr>
+                        <th>STT</th>
+                        <th>Hãng tàu</th>
+                        <th>Booking ID</th>
+                        <th>Yêu cầu</th>
+                        <th>Ngày bắt đầu</th>
+                        <th>Ngày hạn</th>
+                        <th class="text-center">Accept</th>
+                    </tr>
+                </thead>
+
+                <tbody id="tbody-quanlylenh">
+
+                </tbody>
+
+            </table>
+        </div>
+    </div>
+</div>
             <!-- TRANG 4: ADMIN - TÀI KHOẢN -->
             <div id="page-users" class="page">
                 <div class="card shadow-sm p-3">
@@ -191,7 +250,7 @@
 
         </div>
     </div>
-
+                
     <!-- MODAL ĐỘNG CHO THÊM / SỬA CONTAINER -->
     <div class="modal fade" id="dataModal" tabindex="-1">
         <div class="modal-dialog modal-lg">
