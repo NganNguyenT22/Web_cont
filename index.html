@@ -63,12 +63,12 @@
                 <!--adding-->
                 <a class="nav-link role-section view-dieudo" onclick="switchPage('page-quanlylenh')"> <i class="bi bi-clipboard-check"></i> QL. Lệnh</a>
                 
-                <div class="menu-item" id="menu-harong" onclick="showPage('harong')">
+                <div class="menu-item" id="menu-harong" onclick="switchPage('harong')">
                     <i class="bi bi-arrow-down-square-fill text-primary me-2"></i>
                         <span>Hạ Rỗng (Nhập Bãi)</span>
                             </div>
 
-                    <div class="menu-item" id="menu-caprong" onclick="showPage('caprong')">
+                    <div class="menu-item" id="menu-caprong" onclick="switchPage('caprong')">
                     <i class="bi bi-arrow-up-square-fill text-success me-2"></i>
                     <span>Cấp Rỗng (Xuất Bãi)</span>
                 </div>
@@ -255,7 +255,7 @@
     </div>
 </div>
 <!--Giam dinh-->
-<div id="page-quanlytinhtrang" class="app-page container-fluid py-4 d-none">
+<div id="page-quanlytinhtrang" class="page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="fw-bold text-dark mb-1">Quản Lý Tình Trạng Vỏ Container</h4>
@@ -287,7 +287,7 @@
     </div>
 </div>
 
-<div id="page-suachua" class="app-page container-fluid py-4 d-none">
+<div id="page-suachua" class="page">
     <div class="mb-4">
         <h4 class="fw-bold text-dark mb-1">Danh Sách Container Cần Sửa Chữa</h4>
         <p class="text-muted small mb-0">Danh sách tự động lọc các container cần khắc phục lỗi dựa trên tiêu chuẩn kỹ thuật</p>
@@ -395,13 +395,13 @@
     </div>
 </div>
             <!-- adding Giao nhan-->
-           <div id="page-harong" class="app-page container-fluid py-4 d-none">
+           <div id="page-harong" class="page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="fw-bold text-dark mb-1">Quản Lý Hạ Rỗng (Nhập Bãi)</h4>
             <p class="text-muted small mb-0">Danh sách container hạ rỗng về depot lưu bãi</p>
         </div>
-        <button class="btn btn-primary shadow-sm" onclick="openGiaoNhanModal('HaRong')">
+        <button class="btn btn-primary shadow-sm" onclick="openGiaoNhanModalExplicit('HaRong')">
             <i class="bi bi-plus-circle-fill me-1"></i> Tạo Lệnh Hạ Rỗng
         </button>
     </div>
@@ -428,13 +428,13 @@
     </div>
 </div>
 
-<div id="page-caprong" class="app-page container-fluid py-4 d-none">
+<div id="page-caprong" class="page">
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h4 class="fw-bold text-dark mb-1">Quản Lý Cấp Rỗng (Xuất Bãi)</h4>
             <p class="text-muted small mb-0">Danh sách cấp container rỗng cho khách hàng đóng hàng</p>
         </div>
-        <button class="btn btn-success shadow-sm" onclick="openGiaoNhanModal('CapRong')">
+        <button class="btn btn-success shadow-sm" onclick="openGiaoNhanModalExplicit('CapRong')">
             <i class="bi bi-plus-circle-fill me-1"></i> Tạo Lệnh Cấp Rỗng
         </button>
     </div>
