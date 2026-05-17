@@ -86,6 +86,7 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
         }
 
         // ================= 2. ĐIỀU HƯỚNG TRANG =================
+       // ================= 2. ĐIỀU HƯỚNG TRANG =================
         function switchPage(pageId) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
@@ -104,9 +105,13 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
     if(pageId === 'page-users') loadUsers();
     if(pageId === 'page-quanlylenh') loadQuanLyLenh();
     
-    // Kích hoạt nạp dữ liệu riêng biệt theo yêu cầu của bạn:
-    if(pageId === 'page-harong') loadGiaoNhanDataExplicit('ContNhap'); // Đọc sheet ContNhap cấp cho Hạ Rỗng
-    if(pageId === 'page-caprong') loadGiaoNhanDataExplicit('ContCap'); // Đọc sheet ContCap cấp cho Cấp Rỗng
+    // Đã sửa: Đồng bộ chính xác ID trang Giao Nhận độc lập theo Tab mặc định ban đầu là Hạ Rỗng
+    if(pageId === 'page-harong' || pageId === 'page-giaonhan') { 
+        switchGiaoNhanTab('HaRong'); 
+    }
+    if(pageId === 'page-caprong') { 
+        switchGiaoNhanTab('CapRong'); 
+    }
     
     if(pageId === 'page-quanlytinhtrang') fetchGiamDinhData();
     if(pageId === 'page-suachua') renderSuaChuaPage();
@@ -192,7 +197,7 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
         //======Adding QLLenh
         //======adding giaonhan
 // ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN =================
-// Khai báo biến lưu trữ toàn cục cho Giao Nhận
+// Khai báo biến lưu trữ toàn cục biệt lập cho Giao Nhận
 window.globalHaRongData = [];
 window.globalCapRongData = [];
 
@@ -213,7 +218,7 @@ function switchGiaoNhanTab(type) {
         }
     }
     
-    // Đã FIX: Chuyển đổi từ định dạng Tab sang định dạng tên Sheet tương ứng để gọi API chuẩn
+    // Chuyển đổi định dạng Tab sang tham số tên Sheet tương ứng để gọi API
     const sheetParam = (type === 'HaRong') ? 'ContNhap' : 'ContCap';
     loadGiaoNhanDataExplicit(sheetParam);    
 }
@@ -226,11 +231,13 @@ async function loadGiaoNhanDataExplicit(sheetType) {
         const data = await res.json();
         
         if (sheetType === 'ContNhap') {
-            dataNhap = data;
-            renderHaRongTableExplicit(dataNhap);
+            window.globalHaRongData = data; // ĐÃ SỬA: Lưu vào biến giao nhận hạ rỗng chuyên dụng
+            dataNhap = data;                // Cập nhật dự phòng cho bộ dữ liệu nền
+            renderHaRongTableExplicit(window.globalHaRongData);
         } else if (sheetType === 'ContCap') {
-            dataCap = data;
-            renderCapRongTableExplicit(dataCap);
+            window.globalCapRongData = data; // ĐÃ SỬA: Lưu vào biến giao nhận cấp rỗng chuyên dụng
+            dataCap = data;                 // Cập nhật dự phòng cho bộ dữ liệu nền
+            renderCapRongTableExplicit(window.globalCapRongData);
         }
     } catch (e) {
         console.error("Lỗi đồng bộ danh mục giao nhận rỗng:", e);
@@ -238,14 +245,17 @@ async function loadGiaoNhanDataExplicit(sheetType) {
     showLoading(false);
 }
 
-// 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng (Đã bổ sung dự phòng kiểm tra tên cột)
+// 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng (Hỗ trợ đọc dữ liệu linh hoạt)
 function renderHaRongTableExplicit(data) {
     let html = "";
-    if(!data || data.length === 0) {
+    // ĐÃ SỬA: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
+    const sourceData = data || window.globalHaRongData || [];
+    
+    if(!sourceData || sourceData.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử hạ rỗng.</td></tr>`;
     } else {
-        data.forEach(row => {
-            // Dự phòng linh hoạt lỗi viết hoa viết thường của key sheet dữ liệu
+        sourceData.forEach(row => {
+            // Dự phòng linh hoạt lỗi viết hoa viết thường của key thuộc tính từ Google Sheet
             const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
             const eirNo = row["Số lệnh"] || row["Số Lệnh"] || row["Số lệnh"] || '-';
             const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
@@ -274,13 +284,16 @@ function renderHaRongTableExplicit(data) {
     if(targetTarget) targetTarget.innerHTML = html;
 }
 
-// 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng (Đã bổ sung dự phòng kiểm tra tên cột)
+// 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng (Hỗ trợ đọc dữ liệu linh hoạt)
 function renderCapRongTableExplicit(data) {
     let html = "";
-    if(!data || data.length === 0) {
+    // ĐÃ SỬA: Đảm bảo nếu tham số data truyền vào bị rỗng, hàm tự động lấy từ window toàn cục
+    const sourceData = data || window.globalCapRongData || [];
+    
+    if(!sourceData || sourceData.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử cấp rỗng.</td></tr>`;
     } else {
-        data.forEach(row => {
+        sourceData.forEach(row => {
             const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
             const eirNo = row["Số lệnh"] || row["Số Lệnh"] || '-';
             const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
@@ -360,10 +373,6 @@ function openTraCuuModalExplicit() {
         console.error("Không tìm thấy giao diện Modal Tra cứu vị trí!");
     }
 }
-
-// 8. HÀM BỔ SUNG QUAN TRỌNG: Gọi tải mặc định khi người dùng click vào menu chính QL Giao Nhận
-// Hãy tìm hàm switchPage(pageId) gốc trong file app.js của bạn, tìm đoạn rẽ nhánh điều hướng và bổ sung:
-// if (pageId === 'page-giaonhan') { switchGiaoNhanTab('HaRong'); }
         //======adding giaonhan
 
 // ================= QUẢN LÝ LỆNH (ĐÃ FIX LỖI SCOPE TÌM KIẾM) =================
