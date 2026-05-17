@@ -8,7 +8,7 @@
 
         let dataQuanLyLenh = [];
         let currentGiaoNhanTab = 'HaRong';
-
+        let dataGiamDinh = [];
         document.getElementById('current-date').innerText = new Date().toLocaleDateString('vi-VN');
         const showLoading = (s) => document.getElementById('loader').style.display = s ? 'flex' : 'none';
 
@@ -17,7 +17,7 @@
             e.preventDefault();
             const user = document.getElementById('username').value.trim();
             const pass = document.getElementById('password').value.trim();
-            const menuGiamDinh = document.getElementById('menu-giamdinh-section');
+           
             showLoading(true);
 
             if(API_URL.includes("DÁN_LINK")) {
@@ -68,11 +68,12 @@
             } else if(currentUser.role === 'kythuat') {
                 document.querySelectorAll('.view-nhap').forEach(el => el.style.display = 'block');
             }
-          if(currentUser.role === 'admin' || currentUser.role === 'kythuat') {
-                if(menuGiamDinh) menuGiamDinh.classList.remove('d-none');
-            } else {
-                if(menuGiamDinh) menuGiamDinh.classList.add('d-none');
-            }
+            // Đặt đoạn code này sau khi gán currentUser thành công trong hàm Login / Check Authen
+if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'kythuat')) {
+    document.getElementById('menu-giamdinh-wrapper').classList.remove('d-none');
+} else {
+    document.getElementById('menu-giamdinh-wrapper').classList.add('d-none');
+}
 
             document.getElementById('login-screen').style.display = 'none';
             document.getElementById('app-screen').style.display = 'block';
@@ -94,9 +95,11 @@
             
           if(pageId === 'page-quanlylenh') loadQuanLyLenh();
           if(pageId === 'page-giaonhan') loadGiaoNhanData('HaRong');
-          if (pageId === 'page-giamdinh-tinhtrang') {
-            loadGiamDinhData();
-        }
+          if (pageId === 'page-quanlytinhtrang') {
+              fetchGiamDinhData();
+          } else if (pageId === 'page-suachua') {
+              renderSuaChuaPage();
+          }
           
         }
 
@@ -921,23 +924,22 @@ function handleTraCuuCap() {
     }
 }
 //===========Giam dinh
-// =========================================================================
-// PHÂN HỆ NGHIỆP VỤ: QUẢN LÝ GIÁM ĐỊNH & SỬA CHỮA (THÊM MỚI)
-// =========================================================================
-window.globalGiamDinhData = [];
-window.globalLichSuGiamDinh = [];
+// Toggle menu thả xuống
+function toggleSubmenu(e, id) {
+    e.preventDefault();
+    const submenu = document.getElementById(id);
+    const icon = document.getElementById('icon-giamdinh');
+    submenu.classList.toggle('d-none');
+    icon.classList.toggle('rotate-180');
+}
 
-// 1. Tải dữ liệu hai bảng Giám định và Lịch sử từ Sheet về Web App
-async function loadGiamDinhData() {
+// Lấy dữ liệu Giám định từ Google Sheets
+async function fetchGiamDinhData() {
     showLoading(true);
     try {
-        const resGD = await fetch(API_URL + "?type=QuanLyTinhTrang");
-        window.globalGiamDinhData = await resGD.json();
-        
-        const resLS = await fetch(API_URL + "?type=LichSuGiamDinh");
-        window.globalLichSuGiamDinh = await resLS.json();
-        
-        renderTableGiamDinh();
+        const response = await fetch(`${API_URL}?type=GiamDinh`);
+        dataGiamDinh = await response.json();
+        renderGiamDinhTable(dataGiamDinh);
     } catch (err) {
         console.error("Lỗi đồng bộ dữ liệu giám định:", err);
     } finally {
@@ -945,189 +947,213 @@ async function loadGiamDinhData() {
     }
 }
 
-// 2. Render bảng vật lý kèm thuật toán tự động xét duyệt "Cần sửa chữa"
-function renderTableGiamDinh() {
-    let html = "";
-    const list = window.globalGiamDinhData || [];
-    
-    list.forEach((row, index) => {
-        const maCont = row["Mã container"] || '';
-        const hangTau = row["Hãng tàu"] || '';
-        const tinhTrangStr = row["Tình trạng"] || '';
-        const trangThai = row["Trạng thái"] || 'A';
-        const ghiChu = row["Ghi chú"] || '';
+// Render dữ liệu lên View Bảng Giám định
+function renderGiamDinhTable(data) {
+    const tbody = document.getElementById('tbody-giamdinh');
+    tbody.innerHTML = "";
 
-        // Tách chuỗi lỗi để đếm số lượng mục tình trạng đã tích chọn
-        const mangLoi = tinhTrangStr ? tinhTrangStr.split(',').map(s => s.trim()).filter(s => s !== '') : [];
-        const soLuongLoi = mangLoi.length;
+    if (!data || data.error || data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu giám định container nào.</td></tr>`;
+        return;
+    }
 
-        // --- THUẬT TOÁN TỰ ĐỘNG XÉT LỆNH CẦN SỬA CHỮA THEO TIÊU CHÍ ĐỀ BÀI ---
-        let canSuaChua = false;
-        if (trangThai === "C" && soLuongLoi >= 2) {
-            canSuaChua = true;
-        } else if (trangThai === "B" && soLuongLoi >= 3) {
-            canSuaChua = true;
-        }
+    data.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        
+        let statusClass = row['Trạng thái'] === 'A' ? 'bg-status-a' : row['Trạng thái'] === 'B' ? 'bg-status-b' : 'bg-status-c';
+        let textTrangThai = row['Trạng thái'] === 'A' ? 'A (Tốt)' : row['Trạng thái'] === 'B' ? 'B (Bình thường)' : 'C (Tệ)';
+        
+        let badgeRepair = row['Cần sửa chữa'] === 'CÓ' 
+            ? `<span class="badge-repair-yes"><i class="bi bi-exclamation-circle-fill me-1"></i> CÓ</span>` 
+            : `<span class="badge-repair-no">Không</span>`;
 
-        // Tạo nhãn giao diện hiển thị trạng thái A, B, C
-        let badgeTrangThai = '<span class="badge bg-success">A (Tốt)</span>';
-        if (trangThai === 'B') badgeTrangThai = '<span class="badge bg-warning text-dark">B (Bình thường)</span>';
-        if (trangThai === 'C') badgeTrangThai = '<span class="badge bg-danger">C (Tệ)</span>';
-
-        // Tạo nhãn giao diện cho cột Cần sửa chữa
-        let badgeSuaChua = canSuaChua 
-            ? '<span class="badge rounded-pill bg-danger px-2 py-1"><i class="bi bi-tools me-1"></i> BẮT BUỘC SỬA CHỮA</span>'
-            : '<span class="badge rounded-pill bg-light text-muted px-2 py-1">Đạt tiêu chuẩn bãi</span>';
-
-        // Tạo danh sách thẻ nhỏ (Badge) cho từng lỗi cụ thể
-        let cellTinhTrang = mangLoi.map(loi => `<span class="badge bg-secondary-subtle text-dark border me-1 my-1">${loi}</span>`).join('');
-        if (!cellTinhTrang) cellTinhTrang = '<span class="text-muted small">Không phát hiện lỗi</span>';
-
-        html += `
-        <tr>
-            <td>${index + 1}</td>
-            <td class="fw-bold text-uppercase text-primary">${maCont}</td>
-            <td class="fw-bold text-dark">${hangTau}</td>
-            <td>${cellTinhTrang}</td>
-            <td>${badgeTrangThai}</td>
-            <td class="text-muted small">${ghiChu || '-'}</td>
-            <td class="text-center">${badgeSuaChua}</td>
-            <td class="text-center">
-                <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-secondary" title="Lịch sử ghi nhận" onclick="viewHistoryGiamDinh('${maCont}')">
-                        <i class="bi bi-clock-history"></i>
-                    </button>
-                    <button class="btn btn-outline-primary" title="Cập nhật chỉnh sửa" onclick="openModalGiamDinh('edit', ${row.rowIndex})">
-                        <i class="bi bi-pencil-square"></i>
-                    </button>
-                </div>
+        tr.innerHTML = `
+            <td class="ps-3 fw-bold text-secondary">${index + 1}</td>
+            <td class="fw-bold text-dark">${row['Mã container'] || ''}</td>
+            <td class="fw-bold">${row['Hãng tàu'] || ''}</td>
+            <td><small class="text-wrap d-block" style="max-width: 250px;">${row['Tình trạng'] || 'Không lỗi'}</small></td>
+            <td><span class="badge ${statusClass} py-1 px-2">${textTrangThai}</span></td>
+            <td><span class="text-muted small">${row['Ghi chú'] || '-'}</span></td>
+            <td>${badgeRepair}</td>
+            <td class="text-end pe-3">
+                <button class="btn btn-sm btn-light border me-1 py-1 px-2" title="Lịch sử ghi nhận" onclick="viewHistoryGiamDinh('${row['Mã container']}')">
+                    <span class="fw-bold text-dark small" style="font-family: monospace;">H</span>
+                </button>
+                <button class="btn btn-sm btn-outline-primary py-1 px-2" title="Cập nhật dòng" onclick="editGiamDinh(${row.rowIndex})">
+                    <i class="bi bi-pencil-fill small"></i>
+                </button>
             </td>
-        </tr>`;
+        `;
+        tbody.appendChild(tr);
     });
-
-    document.getElementById('tbody-giamdinh-tinhtrang').innerHTML = 
-        html || '<tr><td colspan="8" class="text-center text-muted p-4">Chưa có dữ liệu lịch sử giám định thiết bị nào.</td></tr>';
 }
 
-// 3. Khởi tạo cấu hình và mở Form Modal nhập liệu
-function openModalGiamDinh(action, rowIndex = null) {
+// Mở form điền mới phiếu giám định
+function openModalGiamDinh() {
     document.getElementById('formGiamDinh').reset();
-    document.querySelectorAll('.chk-tinhtrang').forEach(chk => chk.checked = false);
+    document.getElementById('gd_rowIndex').value = "";
+    document.getElementById('modalGiamDinhTitle').innerText = "Tạo Mới Phiếu Giám Định Vỏ Container";
+    document.querySelectorAll('.gd-checkbox').forEach(cb => cb.checked = false);
     
-    document.getElementById('gd_action').value = action;
-    document.getElementById('gd_rowIndex').value = rowIndex || '';
-
-    if (action === 'add') {
-        document.getElementById('modalGiamDinhTitle').innerText = "Tạo phiếu ghi nhận giám định vỏ";
-        document.getElementById('gd_macont').disabled = false;
-    } else {
-        document.getElementById('modalGiamDinhTitle').innerText = "Chỉnh sửa kết quả giám định theo hàng";
-        const target = window.globalGiamDinhData.find(r => r.rowIndex === rowIndex);
-        if (target) {
-            document.getElementById('gd_macont').value = target["Mã container"] || '';
-            document.getElementById('gd_macont').disabled = true; // Không cho sửa mã container gốc để bảo đảm tính nhất quán dữ liệu
-            document.getElementById('gd_hangtau').value = target["Hãng tàu"] || '';
-            document.getElementById('gd_trangthai').value = target["Trạng thái"] || 'A';
-            document.getElementById('gd_ghichu').value = target["Ghi chú"] || '';
-
-            // Đánh dấu check lại các hộp chọn mục tình trạng hư hỏng cũ
-            const loiCuStr = target["Tình trạng"] || '';
-            const mangLoiCu = loiCuStr.split(',').map(s => s.trim());
-            document.querySelectorAll('.chk-tinhtrang').forEach(chk => {
-                if (mangLoiCu.includes(chk.value)) {
-                    chk.checked = true;
-                }
-            });
-        }
-    }
     new bootstrap.Modal(document.getElementById('modalGiamDinh')).show();
 }
 
-// 4. Đóng gói mảng dữ liệu và POST đồng bộ lên máy chủ Google Sheets
-async function saveGiamDinhData(e) {
-    e.preventDefault();
-    showLoading(true);
+// Đổ dữ liệu cũ lên form khi nhấn nút Sửa (Bút chì)
+function editGiamDinh(rowIndex) {
+    const row = dataGiamDinh.find(r => r.rowIndex === rowIndex);
+    if (!row) return alert("Không tìm thấy dữ liệu dòng tương ứng!");
 
-    const action = document.getElementById('gd_action').value;
-    const rowIndex = document.getElementById('gd_rowIndex').value;
+    document.getElementById('gd_rowIndex').value = rowIndex;
+    document.getElementById('gd_container').value = row['Mã container'];
+    document.getElementById('gd_hangtau').value = row['Hãng tàu'];
+    document.getElementById('gd_trangthai').value = row['Trạng thái'];
+    document.getElementById('gd_ghichu').value = row['Ghi chú'] || '';
+    document.getElementById('modalGiamDinhTitle').innerText = "Cập Nhật Dữ Liệu Giám Định";
 
-    // Thu thập tất cả các mục tình trạng lỗi được tích chọn
-    let chkLoiArr = [];
-    document.querySelectorAll('.chk-tinhtrang:checked').forEach(chk => {
-        chkLoiArr.push(chk.value);
+    // Khôi phục trạng thái các Checkbox lỗi đã chọn
+    const selectedList = row['Tình trạng'] ? row['Tình trạng'].split(', ') : [];
+    document.querySelectorAll('.gd-checkbox').forEach(cb => {
+        cb.checked = selectedList.includes(cb.value);
     });
-    const chuoiTinhTrang = chkLoiArr.join(', ');
 
-    // Định dạng cấu trúc mảng ghi dữ liệu dòng (A: STT, B: Mã Cont, C: Hãng tàu, D: Tình trạng, E: Trạng thái, F: Ghi chú, G: Mốc thời gian)
-    const rowValues = [
-        "", // Apps Script tự tính số thứ tự STT tăng dần
-        document.getElementById('gd_macont').value.trim().toUpperCase(),
-        document.getElementById('gd_hangtau').value.trim().toUpperCase(),
-        chuoiTinhTrang,
-        document.getElementById('gd_trangthai').value,
-        document.getElementById('gd_ghichu').value.trim(),
-        "" // Trống, máy chủ Apps Script sẽ tự động lấy và đóng dấu thời gian hiện tại
-    ];
+    new bootstrap.Modal(document.getElementById('modalGiamDinh')).show();
+}
 
+// Lưu dữ liệu (Thêm mới / Cập nhật) và tự động tính toán cột "Cần sửa chữa"
+async function saveGiamDinh() {
+    const rowIndex = document.getElementById('gd_rowIndex').value;
+    const container = document.getElementById('gd_container').value.trim().toUpperCase();
+    const hangtau = document.getElementById('gd_hangtau').value.trim().toUpperCase();
+    const trangthai = document.getElementById('gd_trangthai').value;
+    const ghichu = document.getElementById('gd_ghichu').value.trim();
+
+    if (!container || !hangtau) {
+        alert("Vui lòng nhập đầy đủ Mã Container và Hãng tàu!");
+        return;
+    }
+
+    // Gộp dữ liệu từ các Checkbox được tích chọn thành chuỗi dạng văn bản phân tách bằng dấu phẩy
+    const checkedErrors = [];
+    document.querySelectorAll('.gd-checkbox:checked').forEach(cb => {
+        checkedErrors.push(cb.value);
+    });
+    const tinhtrangStr = checkedErrors.length > 0 ? checkedErrors.join(', ') : 'Không lỗi';
+
+    // --- BIỆN PHÁP LOGIC TỰ ĐỘNG XÁC ĐỊNH "CẦN SỬA CHỮA" ---
+    let canSuaChua = "KHÔNG";
+    if (trangthai === 'C' && checkedErrors.length >= 2) {
+        canSuaChua = "CÓ";
+    } else if (trangthai === 'B' && checkedErrors.length >= 3) {
+        canSuaChua = "CÓ";
+    }
+
+    // Tạo mảng dữ liệu đẩy lên Sheet [STT, Mã container, Hãng tàu, Tình trạng, Trạng thái, Ghi chú, Cần sửa chữa]
+    const rowPayload = ["", container, hangtau, tinhtrangStr, trangthai, ghichu, canSuaChua];
+    const actionType = rowIndex ? "updateGiamDinh" : "addGiamDinh";
+
+    showLoading(true);
     try {
-        const response = await fetch(API_URL, {
-            method: 'POST',
+        await fetch(API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
-                sheetType: "QuanLyTinhTrang",
-                action: action === 'add' ? 'addGiamDinh' : 'updateGiamDinh',
+                action: actionType,
                 rowIndex: rowIndex ? Number(rowIndex) : null,
-                data: rowValues
+                data: rowPayload
             })
         });
-        const result = await response.json();
-        if (result.success) {
-            alert(result.message);
-            // Ẩn modal bằng API Bootstrap
-            const instance = bootstrap.Modal.getInstance(document.getElementById('modalGiamDinh'));
-            if(instance) instance.hide();
-            loadGiamDinhData(); // Tải lại bảng ngay sau khi lưu thành công
-        } else {
-            alert("Lỗi lưu trữ dữ liệu giám định: " + result.error);
-        }
+
+        alert(rowIndex ? "Cập nhật thành công! Thời gian và dữ liệu mới đã được đồng bộ." : "Thêm mới phiếu giám định và ghi nhận lịch sử hệ thống thành công!");
+        
+        // Đóng modal hiển thị
+        const currentModal = bootstrap.Modal.getInstance(document.getElementById('modalGiamDinh'));
+        if (currentModal) currentModal.hide();
+
+        // Tải lại bảng sau 1.5s để Google Sheet kịp cập nhật hàng mới
+        setTimeout(() => { fetchGiamDinhData(); }, 1500);
     } catch (err) {
-        alert("Lỗi kết nối mạng đến cổng đồng bộ máy chủ!");
+        console.error("Lỗi kết nối máy chủ:", err);
+        alert("Đã xảy ra lỗi trong quá trình lưu trữ.");
     } finally {
         showLoading(false);
     }
 }
 
-// 5. Hiển thị Lịch sử tất cả các vết cập nhật của mã container (Icon H)
-function viewHistoryGiamDinh(maCont) {
-    let html = "";
-    // Lọc nhật ký các dòng biến động thuộc về mã container được chọn
-    const logs = window.globalLichSuGiamDinh.filter(log => log["Mã container"] === maCont);
+// Truy cập và hiển thị Nhật ký Lịch sử ghi nhận của từng container (Icon H)
+async function viewHistoryGiamDinh(containerId) {
+    showLoading(true);
+    const tbodyHist = document.getElementById('tbody-lichsu-giamdinh');
+    tbodyHist.innerHTML = `<tr><td colspan="5" class="text-center py-3">Đang kết nối máy chủ để tìm lịch sử...</td></tr>`;
     
-    // Đảo ngược mảng để lần cập nhật mới nhất xếp lên trên cùng
-    logs.reverse().forEach((log, index) => {
-        let badgeHạng = `<span class="badge bg-success">Hạng A</span>`;
-        if (log["Trạng thái"] === "B") badgeHạng = `<span class="badge bg-warning text-dark">Hạng B</span>`;
-        if (log["Trạng thái"] === "C") badgeHạng = `<span class="badge bg-danger">Hạng C</span>`;
+    // Mở modal lịch sử
+    new bootstrap.Modal(document.getElementById('modalLichSuGiamDinh')).show();
 
-        // Định dạng thời gian cục bộ hiển thị đẹp mắt
-        let tGian = log["Thời gian cập nhật"] || '';
-        if (tGian.includes('T')) {
-            tGian = new Date(tGian).toLocaleString('vi-VN');
+    try {
+        const response = await fetch(`${API_URL}?type=LichSu`);
+        const allLogs = await response.json();
+        
+        // Chỉ lọc ra các hàng nhật ký thuộc về Container được chỉ định
+        const filteredLogs = allLogs.filter(log => log['Mã container'] === containerId);
+        
+        tbodyHist.innerHTML = "";
+        if (filteredLogs.length === 0) {
+            tbodyHist.innerHTML = `<tr><td colspan="5" class="text-center text-muted py-3">Không tìm thấy lịch sử biến động dữ liệu cho container này.</td></tr>`;
+            return;
         }
 
-        html += `
-        <tr>
-            <td class="ps-3">${index + 1}</td>
-            <td class="fw-bold">${log["Mã container"]}</td>
-            <td>${log["Tình trạng"] ? log["Tình trạng"] : '<span class="text-success small">Hoàn hảo</span>'}</td>
-            <td>${badgeHạng}</td>
-            <td class="text-muted pe-3">${tGian}</td>
-        </tr>`;
-    });
+        filteredLogs.forEach((log, idx) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td class="ps-3 text-secondary small fw-bold">${idx + 1}</td>
+                <td class="fw-bold">${log['Mã container']}</td>
+                <td><small class="text-wrap">${log['Tình trạng'] || 'Không lỗi'}</small></td>
+                <td><span class="badge bg-secondary">${log['Trạng thái']}</span></td>
+                <td class="text-primary small fw-bold">${log['Thời gian'] || '-'}</td>
+            `;
+            tbodyHist.appendChild(tr);
+        });
+    } catch (err) {
+        tbodyHist.innerHTML = `<tr><td colspan="5" class="text-center text-danger py-3">Không thể tải dữ liệu lịch sử!</td></tr>`;
+    } finally {
+        showLoading(false);
+    }
+}
 
-    document.getElementById('tbody-lichsu-giamdinh').innerHTML = 
-        html || `<tr><td colspan="5" class="text-center text-muted p-3">Chưa có lịch sử thay đổi thông tin nào cho container ${maCont}.</td></tr>`;
-    
-    new bootstrap.Modal(document.getElementById('modalLichSuGiamDinh')).show();
+// Tự động xử lý dữ liệu và xuất sang View "Sửa chữa"
+function renderSuaChuaPage() {
+    const tbody = document.getElementById('tbody-suachua');
+    tbody.innerHTML = "";
+
+    // Lọc các hàng có thuộc tính Cần sửa chữa bằng "CÓ" từ dữ liệu giám định hiện thời
+    const listRepair = dataGiamDinh.filter(item => item['Cần sửa chữa'] === 'CÓ');
+
+    if (listRepair.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="text-center text-muted py-4">Hiện tại không có container nào cần sửa chữa. Gầm vỏ đạt tiêu chuẩn an toàn bãi!</td></tr>`;
+        return;
+    }
+
+    listRepair.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        
+        // Tính tổng số lượng lỗi dựa trên chuỗi tình trạng
+        const totalErrors = row['Tình trạng'] ? row['Tình trạng'].split(', ').length : 0;
+        
+        // Phân cấp ưu tiên sửa chữa dựa theo phân loại trạng thái
+        let uuTien = row['Trạng thái'] === 'C' 
+            ? `<span class="text-danger fw-bold"><i class="bi bi-lightning-charge-fill me-1"></i> Ưu tiên cao (Hạng C)</span>`
+            : `<span class="text-warning fw-bold"><i class="bi bi-arrow-right-circle-fill me-1"></i> Trung bình (Hạng B)</span>`;
+
+        tr.innerHTML = `
+            <td class="ps-3 text-secondary fw-bold">${index + 1}</td>
+            <td class="fw-bold text-danger">${row['Mã container']}</td>
+            <td class="fw-bold">${row['Hãng tàu']}</td>
+            <td><span class="badge bg-dark py-1 px-2">Phân loại ${row['Trạng thái']}</span></td>
+            <td><span class="badge bg-danger py-1 px-2">${totalErrors} danh mục lỗi</span> <small class="text-muted d-block mt-1">${row['Tình trạng']}</small></td>
+            <td>${uuTien}</td>
+        `;
+        tbody.appendChild(tr);
+    });
 }
 //==========Giam dinh
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
