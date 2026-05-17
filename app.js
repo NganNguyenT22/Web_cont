@@ -1,4 +1,4 @@
-  const API_URL = "https://script.google.com/macros/s/AKfycbwoNiUPVg6_R1u2jl-x-O7C8xrZKkUXXPZfwcRgTi_6us_52iCl72Xcd-Pem5-qVA12/exec"; // <-- THAY LINK CỦA BẠN VÀO ĐÂY
+  const API_URL = "https://script.google.com/macros/s/AKfycbyu_JxFlmxFNKObTQhdlxWITkUUyudOG-hB4CkUXLCGNM05baOBbYMC7IsYXjfFw9qN/exec"; // <-- THAY LINK CỦA BẠN VÀO ĐÂY
         
         let currentUser = null;
         let dataNhap = [];
@@ -192,13 +192,11 @@ if (currentUser.role === 'admin' || currentUser.role === 'kythuat') {
         //======Adding QLLenh
         //======adding giaonhan
 // ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN =================
-// Khai báo biến lưu trữ toàn cục cho Giao Nhận (Đặt ở đầu file hoặc trên đầu cụm hàm giao nhận)
+// Khai báo biến lưu trữ toàn cục cho Giao Nhận
 window.globalHaRongData = [];
 window.globalCapRongData = [];
 
-// ================= BỘ ĐIỀU HƯỚNG TAB GIAO NHẬN CHUẨN ĐÃ FIX LỖI GHI ĐÈ & MODAL =================
-
-// 1. Hàm chuyển đổi giữa các Tab Hạ Rỗng / Cấp Rỗng (Nếu bạn dùng giao diện Tab chung)
+// 1. Hàm chuyển đổi giữa các Tab Hạ Rỗng / Cấp Rỗng
 function switchGiaoNhanTab(type) {
     currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại ('HaRong' hoặc 'CapRong')
     
@@ -240,66 +238,79 @@ async function loadGiaoNhanDataExplicit(sheetType) {
     showLoading(false);
 }
 
-// 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng
+// 3. Đổ dữ liệu riêng cho bảng Hạ Rỗng (Đã bổ sung dự phòng kiểm tra tên cột)
 function renderHaRongTableExplicit(data) {
     let html = "";
     if(!data || data.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử hạ rỗng.</td></tr>`;
     } else {
         data.forEach(row => {
-            const d = new Date(row["Ngày nhập bãi"] || row["Ngày thực hiện"]);
+            // Dự phòng linh hoạt lỗi viết hoa viết thường của key sheet dữ liệu
+            const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
+            const eirNo = row["Số lệnh"] || row["Số Lệnh"] || row["Số lệnh"] || '-';
+            const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
+            const size = row["Size"] || row["Kích cỡ"] || '';
+            const viTriBai = row["Bãi"] || row["Vị trí bãi"] || row["Vị trí"] || 'Chưa xếp';
+            
+            const d = new Date(row["Ngày nhập bãi"] || row["Ngày thực hiện"] || row["Thời gian"]);
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
+            
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || ''}</td>
-                <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
-                <td class="fw-bold text-primary">${row["Số Container"] || ''}</td>
-                <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
-                <td><span class="badge bg-light text-dark border">${row["Size"] || ''}</span></td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || ''}</td>
+                <td class="fw-bold text-dark">${eirNo}</td>
+                <td class="fw-bold text-primary">${containerNo}</td>
+                <td>${hangTau}</td>
+                <td><span class="badge bg-light text-dark border">${size}</span></td>
                 <td><small>${dateStr}</small></td>
-                <td><span class="badge bg-primary px-2 py-1">${row["Bãi"] || row["Vị trí bãi"] || 'Chưa xếp'}</span></td>
+                <td><span class="badge bg-primary px-2 py-1">${viTriBai}</span></td>
                 <td class="text-center">
-                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${row["Số lệnh"] || row["Số Lệnh"]}', 'HaRong')"><i class="bi bi-printer"></i> EIR</button>
+                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${eirNo}', 'HaRong')"><i class="bi bi-printer"></i> EIR</button>
                 </td>
             </tr>`;
         });
     }
     
-    // Tự động kiểm tra ID phần tử đích để tránh crash code nếu bạn tách trang riêng biệt
-    const targetTarget = document.getElementById('tbody-harong-explicit') || document.getElementById('tbody-harong');
+    const targetTarget = document.getElementById('tbody-harong-explicit') || document.getElementById('tbody-harong') || document.getElementById('tbody-giaonhan');
     if(targetTarget) targetTarget.innerHTML = html;
 }
 
-// 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng
+// 4. Đổ dữ liệu riêng cho bảng Cấp Rỗng (Đã bổ sung dự phòng kiểm tra tên cột)
 function renderCapRongTableExplicit(data) {
     let html = "";
     if(!data || data.length === 0) {
         html = `<tr><td colspan="8" class="text-center text-muted py-3">Không có dữ liệu lịch sử cấp rỗng.</td></tr>`;
     } else {
         data.forEach(row => {
-            const d = new Date(row["Ngày thực hiện"]);
+            const containerNo = row["Số Container"] || row["Số container"] || row["Mã container"] || row["Mã Container"] || '';
+            const eirNo = row["Số lệnh"] || row["Số Lệnh"] || '-';
+            const hangTau = row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || '';
+            const size = row["Size"] || row["Kích cỡ"] || '';
+            const ghiChu = row["Ghi chú"] || row["Giao"] || row["Trạng thái"] || '-';
+
+            const d = new Date(row["Ngày thực hiện"] || row["Thời gian"]);
             const dateStr = !isNaN(d) ? d.toLocaleDateString('vi-VN') : '-';
+            
             html += `<tr>
-                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || ''}</td>
-                <td class="fw-bold text-dark">${row["Số lệnh"] || row["Số Lệnh"] || '-'}</td>
-                <td class="fw-bold text-success">${row["Số Container"] || ''}</td>
-                <td>${row["Line"] || row["Hãng tàu"] || ''}</td>
-                <td><span class="badge bg-light text-dark border">${row["Size"] || ''}</span></td>
+                <td class="ps-3 text-secondary fw-bold">${row["Stt"] || row["STT"] || row["stt"] || ''}</td>
+                <td class="fw-bold text-dark">${eirNo}</td>
+                <td class="fw-bold text-success">${containerNo}</td>
+                <td>${hangTau}</td>
+                <td><span class="badge bg-light text-dark border">${size}</span></td>
                 <td><small>${dateStr}</small></td>
-                <td><small class="text-muted">${row["Ghi chú"] || row["Giao"] || '-'}</small></td>
+                <td><small class="text-muted">${ghiChu}</small></td>
                 <td class="text-center">
-                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${row["Số lệnh"] || row["Số Lệnh"]}', 'CapRong')"><i class="bi bi-printer"></i> EIR</button>
+                    <button class="btn btn-xs btn-outline-secondary py-0 px-2" onclick="printEIR('${eirNo}', 'CapRong')"><i class="bi bi-printer"></i> EIR</button>
                 </td>
             </tr>`;
         });
     }
     
-    const targetTarget = document.getElementById('tbody-caprong-explicit') || document.getElementById('tbody-caprong');
+    const targetTarget = document.getElementById('tbody-caprong-explicit') || document.getElementById('tbody-caprong') || document.getElementById('tbody-giaonhan');
     if(targetTarget) targetTarget.innerHTML = html;
 }
 
-// 5. Hàm mở Modal Tạo Lệnh Giao Nhận EIR (Đã chuyển đổi sang Bootstrap 5 Vanilla JS chuẩn)
+// 5. Hàm mở Modal Tạo Lệnh Giao Nhận EIR 
 function openGiaoNhanModalExplicit(loaiHinh) {
-    // Lưu loại hình hiện tại vào biến global để đồng bộ biểu mẫu lúc nhấn nút Lưu
     currentGiaoNhanTab = loaiHinh; 
 
     const titleObj = document.getElementById('giaoNhanModalLabel');
@@ -307,15 +318,12 @@ function openGiaoNhanModalExplicit(loaiHinh) {
         titleObj.innerText = loaiHinh === 'HaRong' ? 'Lập Lệnh Hạ Rỗng (Nhập Bãi)' : 'Lập Lệnh Cấp Rỗng (Xuất Bãi)';
     }
 
-    // Đổ dữ liệu vào input ẩn nếu form của bạn sử dụng cấu trúc phân loại ẩn
     const hiddenInput = document.getElementById('gn_loaihinh_hidden') || document.getElementById('gn_loaihinh');
     if(hiddenInput) hiddenInput.value = loaiHinh;
     
-    // Reset và xóa các vết dữ liệu cũ trên form tránh ghi đè nhầm
     const form = document.getElementById('form-giaonhan-submit') || document.getElementById('form-giaonhan');
     if(form) form.reset();
     
-    // Đã FIX: Sử dụng bộ dựng Modal chuẩn của Bootstrap 5 thay thế cho cú pháp JQuery ($().modal) cũ
     const modalElement = document.getElementById('modalGiaoNhan');
     if(modalElement) {
         const modalInstance = bootstrap.Modal.getOrCreateInstance(modalElement);
@@ -325,13 +333,12 @@ function openGiaoNhanModalExplicit(loaiHinh) {
     }
 }
 
-// 6. Đã FIX: Hàm mở Modal Đề xuất hạ (Đồng nhất tên hàm viết hoa chữ X từ nút bấm)
+// 6. Hàm mở Modal Đề xuất hạ
 function openDeXuatHaModal(rowIndex, container, hangtau, size) {
     if(document.getElementById('dx_rowIndex')) document.getElementById('dx_rowIndex').value = rowIndex || '';
     if(document.getElementById('dx_container')) document.getElementById('dx_container').value = container || '';
     if(document.getElementById('dx_hangtau')) document.getElementById('dx_hangtau').value = hangtau || '';
     if(document.getElementById('dx_size')) document.getElementById('dx_size').value = size || '';
-    
     if(document.getElementById('dx_khuvuc')) document.getElementById('dx_khuvuc').value = '';
     
     const modalElement = document.getElementById('modalDeXuatHa');
@@ -343,8 +350,7 @@ function openDeXuatHaModal(rowIndex, container, hangtau, size) {
     }
 }
 
-// 7. Đã FIX: Đoạn kết thúc xử lý của hàm Tra Cứu Vị Trí Container
-// Bạn hãy tìm hàm timKiemViTri() hiện tại của bạn, ở dòng cuối cùng thay thế lệnh cũ bằng khối này:
+// 7. Hàm mở Modal Tra Cứu Vị Trí Container
 function openTraCuuModalExplicit() {
     const modalElement = document.getElementById('modalTraCuu') || document.getElementById('modalTraCuuKetQua');
     if(modalElement) {
@@ -354,6 +360,10 @@ function openTraCuuModalExplicit() {
         console.error("Không tìm thấy giao diện Modal Tra cứu vị trí!");
     }
 }
+
+// 8. HÀM BỔ SUNG QUAN TRỌNG: Gọi tải mặc định khi người dùng click vào menu chính QL Giao Nhận
+// Hãy tìm hàm switchPage(pageId) gốc trong file app.js của bạn, tìm đoạn rẽ nhánh điều hướng và bổ sung:
+// if (pageId === 'page-giaonhan') { switchGiaoNhanTab('HaRong'); }
         //======adding giaonhan
 
 // ================= QUẢN LÝ LỆNH (ĐÃ FIX LỖI SCOPE TÌM KIẾM) =================
@@ -1454,7 +1464,22 @@ async function viewHistoryGiamDinh(containerId) {
         showLoading(false);
     }
 }
+// Ví dụ cấu trúc hàm lưu dữ liệu từ app.js gửi lên App Script mới:
+async function saveGiamDinhEdit(rowIndex) {
+    const objPayload = {
+        action: "updateGiamDinh",
+        rowIndex: rowIndex, // Ví dụ: 3
+        data: {
+            "Trạng thái": document.getElementById(`edit-trangthai-${rowIndex}`).value,
+            "Tình trạng": document.getElementById(`edit-tinhtrang-${rowIndex}`).value,
+            "Sửa chữa": document.getElementById(`edit-suachua-${rowIndex}`).value,
+            "Ghi chú kỹ thuật": document.getElementById(`edit-ghichu-${rowIndex}`).value,
+            "Người giám định": currentUser ? currentUser.name : "Kỹ thuật viên"
+        }
+    };
 
+    // Tiến hành fetch(API_URL) gửi objPayload đi...
+}
 // Tự động xử lý dữ liệu và xuất sang View "Sửa chữa"
 function renderSuaChuaPage() {
     const tbody = document.getElementById('tbody-suachua');
