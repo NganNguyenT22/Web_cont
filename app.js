@@ -1154,6 +1154,45 @@ function renderSuaChuaPage() {
         `;
         tbody.appendChild(tr);
     });
+// Tự động lọc dữ liệu và điền các ô vào bảng "Sửa chữa"
+function renderSuaChuaPage() {
+    const tbody = document.getElementById('tbody-suachua');
+    tbody.innerHTML = "";
+
+    // Lọc ra các hàng từ dữ liệu giám định có thuộc tính Cần sửa chữa là "CÓ"
+    const listCanSuaChua = dataGiamDinh.filter(item => item['Cần sửa chữa'] === 'CÓ');
+
+    if (listCanSuaChua.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center text-muted py-4">Hiện tại không có container nào cần sửa chữa.</td></tr>`;
+        return;
+    }
+
+    // Tiến hành render các ô (cell) trong bảng theo từng hàng dữ liệu
+    listCanSuaChua.forEach((row, index) => {
+        const tr = document.createElement('tr');
+        
+        // Thiết lập màu sắc hiển thị cho Badge Trạng thái phân loại (A, B, C)
+        let statusClass = row['Trạng thái'] === 'B' ? 'bg-status-b' : 'bg-status-c';
+        let textTrangThai = row['Trạng thái'] === 'B' ? 'B (Bình thường)' : 'C (Tệ)';
+        
+        // Xác định mức độ ưu tiên dựa trên trạng thái lỗi
+        let uuTienBadge = row['Trạng thái'] === 'C'
+            ? `<span class="badge bg-danger text-white p-2"><i class="bi bi-exclamation-triangle-fill me-1"></i> KHẨN CẤP (Hạng C)</span>`
+            : `<span class="badge bg-warning text-dark p-2"><i class="bi bi-arrow-right-circle-fill me-1"></i> TRUNG BÌNH (Hạng B)</span>`;
+
+        // Điền dữ liệu vào các ô tương ứng trong hàng
+        tr.innerHTML = `
+            <td class="ps-3 text-secondary fw-bold">${index + 1}</td>
+            <td class="fw-bold text-danger">${row['Mã container'] || ''}</td>
+            <td class="fw-bold text-dark">${row['Hãng tàu'] || ''}</td>
+            <td><span class="text-wrap d-block small fw-medium" style="max-width: 280px;">${row['Tình trạng'] || ''}</span></td>
+            <td><span class="badge ${statusClass} py-1 px-2">${textTrangThai}</span></td>
+            <td><small class="text-muted">${row['Ghi chú'] || '-'}</small></td>
+            <td>${uuTienBadge}</td>
+        `;
+        
+        tbody.appendChild(tr);
+    });
 }
 //==========Giam dinh
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
