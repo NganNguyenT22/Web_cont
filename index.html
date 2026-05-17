@@ -70,6 +70,11 @@
                 </div>
                 
                 <a class="nav-link text-danger mt-4" onclick="location.reload()"><i class="bi bi-box-arrow-left"></i> Đăng xuất</a>
+                <div id="menu-giamdinh-section" class="d-none">
+                <div class="menu-title small text-muted px-3 mt-3 text-uppercase" style="font-size: 0.75rem; letter-spacing: 0.5px;">Giám định & Sửa chữa</div>
+                <a href="#" onclick="switchPage('page-giamdinh-tinhtrang')"><i class="bi bi-shield-check me-2"></i>Quản lý tình trạng</a>
+                <a href="#" onclick="switchPage('page-giamdinh-suachua')"><i class="bi bi-tools me-2"></i>Quản lý sửa chữa</a>
+            </div>
             </div>
         </div>
 
@@ -226,7 +231,123 @@
         </div>
     </div>
 </div>
+<!--Giam dinh-->
+            <div id="page-giamdinh-tinhtrang" class="page-content p-4" style="display: none;">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h4 class="fw-bold text-dark mb-1">Quản lý tình trạng vỏ container</h4>
+                    <p class="text-muted small mb-0">Giám định hư hỏng, phân hạng chất lượng bãi tồn thiết bị</p>
+                </div>
+                <button class="btn btn-primary btn-sm fw-bold px-3" onclick="openModalGiamDinh('add')">
+                    <i class="bi bi-plus-lg me-1"></i> Tạo phiếu giám định mới
+                </button>
+            </div>
 
+            <div class="card border-0 shadow-sm rounded-3">
+                <div class="table-responsive">
+                    <table class="table align-middle mb-0 bg-white" style="font-size: 0.9rem;">
+                        <thead class="bg-light text-dark fw-bold text-uppercase" style="font-size: 0.75rem;">
+                            <tr>
+                                <th style="width: 60px;">STT</th>
+                                <th>Mã Container</th>
+                                <th>Hãng Tàu</th>
+                                <th>Tình Trạng (Lỗi)</th>
+                                <th style="width: 120px;">Trạng Thái</th>
+                                <th>Ghi Chú</th>
+                                <th class="text-center" style="width: 150px;">Cần Sửa Chữa</th>
+                                <th class="text-center" style="width: 120px;">Thao Tác</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tbody-giamdinh-tinhtrang">
+                            </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div id="page-giamdinh-suachua" class="page-content p-4" style="display: none;">
+            <h4 class="fw-bold text-dark mb-1">Quản lý sửa chữa xưởng cơ khí</h4>
+            <p class="text-muted small">Danh sách vỏ container đang trong tiến trình bảo dưỡng, vá hàn, thay đà</p>
+            <div class="alert alert-info small text-center p-3">Tính năng phân hệ sửa chữa xưởng đang được cập nhật kết nối dữ liệu bãi...</div>
+        </div>
+
+        <div class="modal fade" id="modalGiamDinh" data-bs-backdrop="static" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-dark text-white p-3">
+                        <h5 class="modal-title fw-bold" id="modalGiamDinhTitle">Phiếu Giám Định Vỏ</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="formGiamDinh" onsubmit="saveGiamDinhData(event)">
+                        <input type="hidden" id="gd_rowIndex">
+                        <input type="hidden" id="gd_action">
+                        <div class="modal-body p-3">
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Mã Container</label>
+                                <input type="text" class="form-control text-uppercase fw-bold" id="gd_macont" required placeholder="Ví dụ: SOTU1234567">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Hãng tàu</label>
+                                <input type="text" class="form-control text-uppercase" id="gd_hangtau" required placeholder="COSCO, MAERSK, ONE...">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold text-danger">Tình trạng (Chọn nhiều mục)</label>
+                                <div class="p-2 border rounded bg-light" style="max-height: 160px; overflow-y: auto;">
+                                    <div class="form-check mb-1"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Móp vách"> <label class="form-check-label small">Móp vách (Dent)</label></div>
+                                    <div class="form-check mb-1"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Rách vách"> <label class="form-check-label small">Rách vách (Cut)</label></div>
+                                    <div class="form-check mb-1"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Thủng sàn"> <label class="form-check-label small">Thủng sàn (Hole floor)</label></div>
+                                    <div class="form-check mb-1"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Hư đà"> <label class="form-check-label small">Hư đà (Crossmember damaged)</label></div>
+                                    <div class="form-check mb-1"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Hở ron cửa"> <label class="form-check-label small">Hở ron cửa (Gasket loose)</label></div>
+                                    <div class="form-check"><input class="form-check-input chk-tinhtrang" type="checkbox" value="Rỉ sét lủng"> <label class="form-check-label small">Rỉ sét lủng (Heavy Rust)</label></div>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-bold">Trạng thái (Hạng chất lượng)</label>
+                                <select class="form-select fw-bold" id="gd_trangthai" required>
+                                    <option value="A">A (Tốt)</option>
+                                    <option value="B">B (Bình thường)</option>
+                                    <option value="C">C (Tệ)</option>
+                                </select>
+                            </div>
+                            <div class="mb-0">
+                                <label class="form-label small fw-bold">Ghi chú chi tiết</label>
+                                <textarea class="form-control" id="gd_ghichu" rows="2" placeholder="Ghi chú cụ thể vị trí hư hỏng..."></textarea>
+                            </div>
+                        </div>
+                        <div class="modal-footer p-2 bg-light">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Hủy</button>
+                            <button type="submit" class="btn btn-dark btn-sm px-3 fw-bold"><i class="bi bi-save me-1"></i> Lưu lại</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="modal fade" id="modalLichSuGiamDinh" tabindex="-1">
+            <div class="modal-dialog modal-lg modal-dialog-centered">
+                <div class="modal-content border-0 shadow">
+                    <div class="modal-header bg-secondary text-white p-3">
+                        <h5 class="modal-title fw-bold"><i class="bi bi-clock-history me-1"></i> Nhật ký biến động tình trạng vỏ</h5>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body p-0" style="max-height: 400px; overflow-y: auto;">
+                        <table class="table table-striped table-hover mb-0 small align-middle">
+                            <thead class="table-dark text-uppercase" style="font-size: 0.75rem;">
+                                <tr>
+                                    <th class="ps-3" style="width: 60px;">STT</th>
+                                    <th>Mã Container</th>
+                                    <th>Tình Trạng</th>
+                                    <th>Trạng Thái</th>
+                                    <th class="pe-3">Thời Gian Cập Nhật</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-lichsu-giamdinh">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
             <!-- adding Giao nhan-->
             <div id="page-giaonhan" class="page">
     <div class="card p-3 mb-3 shadow-sm border-0">
