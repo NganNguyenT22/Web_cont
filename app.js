@@ -169,114 +169,82 @@
             document.getElementById('tbody-cap').innerHTML = html || '<tr><td colspan="10" class="text-center">Trống</td></tr>';
         }
         //======Adding QLLenh
+// ================= QUẢN LÝ LỆNH (ĐÃ FIX LỖI SCOPE TÌM KIẾM) =================
 async function loadQuanLyLenh() {
-
     showLoading(true);
-
     try {
-
         const res = await fetch(API_URL + "?type=QuanLyLenh");
-
-        dataQuanLyLenh = await res.json();
-
-        renderTableQuanLyLenh();
-
+        const reponseData = await res.json();
+        
+        // Lưu trực tiếp vào window để tránh bị rỗng biến khi tìm kiếm
+        window.globalDataLenh = reponseData; 
+        
+        renderTableQuanLyLenh(window.globalDataLenh);
     } catch(e) {
-
-        console.error(e);
-
+        console.error("Lỗi tải lệnh:", e);
     }
-
     showLoading(false);
 }
 
-function renderTableQuanLyLenh(data = dataQuanLyLenh) {
-
+function renderTableQuanLyLenh(data) {
+    // Nếu không có dữ liệu truyền vào, lấy từ bộ nhớ window toàn cục
+    const dataRender = data || window.globalDataLenh || [];
     let html = "";
 
-    data.forEach((row, index) => {
-
+    dataRender.forEach((row, index) => {
         if(row["Status"] === "ACCEPTED") return;
 
         const now = new Date();
+        
+        // Sửa lỗi bốc tên cột Ngày Hạn
+        const rawExpireDate = row["Ngày hạn"] || row["Ngày Hạn"];
+        const expireDate = rawExpireDate ? new Date(rawExpireDate) : null;
+        
+        let isValid = false;
+        if (expireDate && !isNaN(expireDate.getTime())) {
+            isValid = now <= expireDate;
+        }
 
-        const expireDate = new Date(row["Ngày hạn"]);
+        // Định dạng hiển thị ngày tháng chuẩn Việt Nam
+        const rawStartDate = row["Ngày bắt đầu"] || row["Ngày Bắt Đầu"];
+        const dStart = rawStartDate ? new Date(rawStartDate) : null;
+        const startDateStr = (dStart && !isNaN(dStart.getTime())) ? dStart.toLocaleDateString('vi-VN') : (rawStartDate || '');
+        const endDateStr = (expireDate && !isNaN(expireDate.getTime())) ? expireDate.toLocaleDateString('vi-VN') : (rawExpireDate || 'Chưa cấu hình');
 
-        const isValid = now <= expireDate;
+        // Sửa lỗi lệch chữ HOA / thường của Booking ID
+        const bookingId = row["Booking ID"] || row["Booking id"] || row["Booking ID "] || '';
 
         html += `
         <tr>
-
             <td>${row["STT"] || index + 1}</td>
-
             <td>
                 <span class="badge bg-primary">
-                    ${row["Hãng tàu"] || ''}
+                    ${row["Hãng tàu"] || row["Hãng Tàu"] || ''}
                 </span>
             </td>
-
-            <td class="fw-bold text-dark">
-                ${row["Booking ID"] || ''}
-            </td>
-
+            <td class="fw-bold text-dark">${bookingId}</td>
             <td>
-
                 ${
                     row["Yêu cầu"] === "Hạ rỗng"
-
-                    ?
-
-                    `<span class="badge bg-danger">
-                        Hạ rỗng
-                    </span>`
-
-                    :
-
-                    `<span class="badge bg-success">
-                        Cấp rỗng
-                    </span>`
+                    ? `<span class="badge bg-danger">Hạ rỗng</span>`
+                    : `<span class="badge bg-success">Cấp rỗng</span>`
                 }
-
             </td>
-
-            <td>
-                ${row["Ngày bắt đầu"] || ''}
-            </td>
-
-            <td class="${isValid ? '' : 'text-danger fw-bold'}">
-                ${row["Ngày hạn"] || ''}
-            </td>
-
+            <td>${startDateStr}</td>
+            <td class="${isValid ? '' : 'text-danger fw-bold'}">${endDateStr}</td>
             <td class="text-center">
-
                 ${
                     isValid
-
-                    ?
-
-                    `<button
-                        class="btn btn-sm btn-success"
-                        onclick="acceptBooking('${row["Booking ID"]}', ${row.rowIndex})"
-                    >
-                        <i class="bi bi-check-lg"></i>
-                    </button>`
-
-                    :
-
-                    `<span class="badge bg-danger">
-                        Hết hạn
-                    </span>`
+                    ? `<button class="btn btn-sm btn-success" onclick="acceptBooking('${bookingId}', ${row.rowIndex})"><i class="bi bi-check-lg"></i></button>`
+                    : `<span class="badge bg-danger">Hết hạn</span>`
                 }
-
             </td>
-
         </tr>
         `;
     });
 
     document.getElementById('tbody-quanlylenh').innerHTML =
-        html ||
-        '<tr><td colspan="7" class="text-center">Không có dữ liệu</td></tr>';
+        html || '<tr><td colspan="7" class="text-center">Không tìm thấy dữ liệu phù hợp</td></tr>';
 }
 
 function searchBooking() {
@@ -286,23 +254,19 @@ function searchBooking() {
         .trim()
         .toLowerCase();
 
-    // Nếu người dùng xóa hết chữ và bấm tìm kiếm, hiển thị lại toàn bộ bảng
+    // Lấy dữ liệu gốc từ window toàn cục, nếu chưa có thì gán mảng rỗng
+    const nguonDuLieuGoc = window.globalDataLenh || [];
+
     if (!keyword) {
-        renderTableQuanLyLenh(dataQuanLyLenh);
+        renderTableQuanLyLenh(nguonDuLieuGoc);
         return;
     }
 
-    const filtered = dataQuanLyLenh.filter(row => {
-        // Kiểm tra tất cả các trường hợp viết hoa viết thường của Booking ID từ API
-        const bookingIdRaw = row["Booking ID"] || row["Booking id"] || row["BOOKING ID"] || "";
-        
-        return bookingIdRaw
-            .toString()
-            .toLowerCase()
-            .includes(keyword);
+    const filtered = nguonDuLieuGoc.filter(row => {
+        const bookingIdRaw = row["Booking ID"] || row["Booking id"] || row["Booking ID "] || '';
+        return bookingIdRaw.toString().toLowerCase().includes(keyword);
     });
 
-    // Cập nhật lại giao diện hiển thị với danh sách đã lọc
     renderTableQuanLyLenh(filtered);
 }
 
