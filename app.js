@@ -542,6 +542,273 @@ function handleTraCuuNhanh() {
     renderTableHaRong(filtered);
     deXuatModal.hide();
 }
+// ==========================================================================
+// THIẾT LẬP NGHIỆP VỤ: QUẢN LÝ CẤP RỖNG (XUẤT BÃI)
+// ==========================================================================
+
+window.globalCapRongData = []; // Mảng chứa dữ liệu CapRong toàn cục
+const eirCapModal = new bootstrap.Modal(document.getElementById('eirCapModal'));
+const deXuatCapModal = new bootstrap.Modal(document.getElementById('deXuatCapModal'));
+
+// Hàm render dữ liệu ra bảng Cấp Rỗng
+function renderTableCapRong(data) {
+    let html = "";
+    const list = data || window.globalCapRongData || [];
+
+    list.forEach((row, index) => {
+        let badgeColor = "bg-success";
+        let labelText = "A (Tốt)";
+        if (row["Trạng thái"] === "B") { badgeColor = "bg-warning text-dark"; labelText = "B (Bình thường)"; }
+        if (row["Trạng thái"] === "C") { badgeColor = "bg-danger"; labelText = "C (Tệ)"; }
+
+        html += `
+        <tr>
+            <td>${index + 1}</td>
+            <td class="fw-bold text-dark">${row["Mã container"] || ''}</td>
+            <td><span class="badge bg-secondary">${row["Size"] || ''}</span></td>
+            <td>${row["Hãng tàu"] || ''}</td>
+            <td><span class="badge ${badgeColor}">${labelText}</span></td>
+            <td class="text-center">
+                <div class="btn-group btn-group-sm">
+                    <button class="btn btn-outline-info" title="Chi tiết thông tin (i)" onclick="viewDetailCapRong(${row.rowIndex})">
+                        <i class="bi bi-info-circle"></i>
+                    </button>
+                    <button class="btn btn-outline-primary" title="Chỉnh sửa (Bút)" onclick="openEirCapModal('edit', ${row.rowIndex})">
+                        <i class="bi bi-pencil"></i>
+                    </button>
+                    ${currentUser && currentUser.role === 'admin' ? `
+                    <button class="btn btn-outline-danger" title="Xóa" onclick="deleteRow('CapRong', ${row.rowIndex})">
+                        <i class="bi bi-trash"></i>
+                    </button>` : ''}
+                </div>
+            </td>
+        </tr>`;
+    });
+
+    document.getElementById('tbody-caprong').innerHTML = 
+        html || '<tr><td colspan="6" class="text-center text-muted">Không tìm thấy dữ liệu container cấp rỗng nào.</td></tr>';
+}
+
+// Tự động bốc thông tin từ dữ liệu Tồn bãi (dataNhap) sang khi gõ xong mã container
+function autoFillFromHold(maCont) {
+    if (!maCont) return;
+    const cleanCont = maCont.trim().toUpperCase();
+    
+    // Quét tìm container trong dữ liệu tồn bãi hiện tại của web
+    const found = dataNhap.find(item => {
+        const currentCont = (item["Số Container"] || item["Số container"] || item["Mã container"] || "").toString().trim().toUpperCase();
+        return currentCont === cleanCont;
+    });
+
+    if (found) {
+        let cleanDate = "";
+        if (found["Ngày nhập bãi"]) {
+            cleanDate = found["Ngày nhập bãi"].includes("T") ? found["Ngày nhập bãi"].split("T")[0] : found["Ngày nhập bãi"];
+        }
+        document.getElementById('eirCap_ngaynhap').value = cleanDate;
+        document.getElementById('eirCap_gionhap').value = found["Giờ"] || found["Giờ nhập"] || "";
+        document.getElementById('eirCap_hangtau').value = found["Line"] || found["Hãng tàu"] || "";
+        document.getElementById('eirCap_size').value = found["Size"] || "20DC";
+    }
+}
+
+// Mở Modal lập/sửa phiếu EIR Cấp Rỗng
+function openEirCapModal(mode, rowIndex = null) {
+    document.getElementById('eirCapForm').reset();
+    document.getElementById('eirCap_rowIndex').value = rowIndex || "";
+
+    const now = new Date();
+    document.getElementById('eirCap_ngay').value = now.toISOString().split('T')[0];
+    document.getElementById('eirCap_gio').value = now.toTimeString().split(' ')[0].substring(0, 5);
+    document.getElementById('eirCap_nguoithuchien').value = currentUser ? currentUser.name : "Nhân viên trực tuyến";
+
+    if (mode === 'add') {
+        document.getElementById('eirCapModalTitle').innerHTML = '<i class="bi bi-plus-lg me-1"></i> Tạo Phiếu EIR Cấp Rỗng';
+        document.getElementById('eirCapModalHeader').className = "modal-header bg-success text-white";
+    } else {
+        document.getElementById('eirCapModalTitle').innerHTML = '<i class="bi bi-pencil me-1"></i> Chỉnh sửa thông tin Cấp Rỗng';
+        document.getElementById('eirCapModalHeader').className = "modal-header bg-warning text-dark";
+
+        const rowData = window.globalCapRongData.find(r => r.rowIndex === rowIndex);
+        if (rowData) {
+            document.getElementById('eirCap_macont').value = rowData["Mã container"] || "";
+            document.getElementById('eirCap_hangtau').value = rowData["Hãng tàu"] || "";
+            document.getElementById('eirCap_size').value = rowData["Size"] || "20DC";
+            document.getElementById('eirCap_trangthai').value = rowData["Trạng thái"] || "A";
+            document.getElementById('eirCap_bienso').value = rowData["Biển số xe"] || "";
+            document.getElementById('eirCap_khachhang').value = rowData["Khách hàng"] || "";
+            document.getElementById('eirCap_seal').value = rowData["Số Seal"] || "";
+            document.getElementById('eirCap_tuoi').value = rowData["Tuổi container"] || "";
+            document.getElementById('eirCap_ghichu').value = rowData["Ghi chú"] || "";
+            
+            if (rowData["Ngày thực hiện"]) document.getElementById('eirCap_ngay').value = rowData["Ngày thực hiện"].split('T')[0];
+            if (rowData["Giờ"]) document.getElementById('eirCap_gio').value = rowData["Giờ"];
+            if (rowData["Ngày nhập bãi"]) document.getElementById('eirCap_ngaynhap').value = rowData["Ngày nhập bãi"].split('T')[0];
+            if (rowData["Giờ nhập bãi"]) document.getElementById('eirCap_gionhap').value = rowData["Giờ nhập bãi"];
+        }
+    }
+    eirCapModal.show();
+}
+
+// Lưu phiếu Cấp Rỗng về Google Sheets
+async function saveEirCapData() {
+    const rowIndex = document.getElementById('eirCap_rowIndex').value;
+    
+    const rowValues = [
+        "", // Cột STT tự sinh trên sheet
+        document.getElementById('eirCap_macont').value.trim().toUpperCase(),
+        document.getElementById('eirCap_size').value,
+        document.getElementById('eirCap_hangtau').value.trim().toUpperCase(),
+        document.getElementById('eirCap_trangthai').value,
+        document.getElementById('eirCap_bienso').value.trim().toUpperCase(),
+        document.getElementById('eirCap_khachhang').value.trim(),
+        document.getElementById('eirCap_ngay').value,
+        document.getElementById('eirCap_gio').value,
+        document.getElementById('eirCap_ghichu').value.trim(),
+        document.getElementById('eirCap_nguoithuchien').value,
+        document.getElementById('eirCap_tuoi').value.trim(),
+        document.getElementById('eirCap_seal').value.trim().toUpperCase(),
+        document.getElementById('eirCap_ngaynhap').value,
+        document.getElementById('eirCap_gionhap').value
+    ];
+
+    if (!rowValues[1] || !rowValues[3] || !rowValues[5]) {
+        alert("Vui lòng điền đầy đủ các thông tin cốt lõi (Mã container, Hãng tàu, Biển số)!");
+        return;
+    }
+
+    const payload = {
+        sheetType: "CapRong",
+        action: rowIndex ? "update" : "add",
+        rowIndex: rowIndex ? parseInt(rowIndex) : null,
+        data: rowValues
+    };
+
+    showLoading(true);
+    try {
+        await fetch(API_URL, { method: "POST", mode: "no-cors", body: JSON.stringify(payload) });
+        eirCapModal.hide();
+        setTimeout(() => {
+            alert("Lưu phiếu EIR Cấp Rỗng thành công!");
+            switchGiaoNhanTab('CapRong');
+        }, 1000);
+    } catch (err) {
+        alert("Lỗi máy chủ khi lưu phiếu!");
+        showLoading(false);
+    }
+}
+//===caprong
+async function switchGiaoNhanTab(type) {
+    showLoading(true);
+    try {
+        const response = await fetch(API_URL + "?type=" + type);
+        const resData = await response.json();
+        if (type === 'HaRong') {
+            window.globalHaRongData = resData;
+            renderTableHaRong(resData);
+        } else if (type === 'CapRong') {
+            window.globalCapRongData = resData;
+            renderTableCapRong(resData);
+        }
+    } catch (e) {
+        console.error("Lỗi đồng bộ tab giao nhận:", e);
+    }
+    showLoading(false);
+}
+//=====Caprong
+// Xem chi tiết thông tin (icon i)
+function viewDetailCapRong(rowIndex) {
+    const target = window.globalCapRongData.find(r => r.rowIndex === rowIndex);
+    if (!target) return;
+
+    const bodyDetails = `
+    <table class="table table-bordered table-sm mb-0 bg-white small">
+        <tr><td class="fw-bold bg-light" style="width:40%;">Mã Container:</td><td class="text-primary fw-bold text-uppercase">${target["Mã container"] || ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Kích thước (Size):</td><td><span class="badge bg-secondary">${target["Size"] || ''}</span></td></tr>
+        <tr><td class="fw-bold bg-light">Hãng tàu:</td><td>${target["Hãng tàu"] || ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Trạng thái:</td><td>Hạng ${target["Trạng thái"] || 'A'}</td></tr>
+        <tr><td class="fw-bold bg-light text-danger">Số Seal niêm phong:</td><td class="text-danger fw-bold">${target["Số Seal"] || 'Chưa cấp'}</td></tr>
+        <tr><td class="fw-bold bg-light">Biển số xe nhận:</td><td>${target["Biển số xe"] || ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Khách hàng lấy:</td><td>${target["Khách hàng"] || ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Thời gian thực hiện:</td><td>${target["Giờ"] || ''} - ${target["Ngày thực hiện"] ? target["Ngày thực hiện"].split('T')[0] : ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Thời gian nhập bãi gốc:</td><td>${target["Giờ nhập bãi"] || ''} - ${target["Ngày nhập bãi"] ? target["Ngày nhập bãi"].split('T')[0] : ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Tuổi thiết bị (Năm):</td><td>${target["Tuổi container"] || '0'} năm</td></tr>
+        <tr><td class="fw-bold bg-light">Người ký duyệt eir:</td><td>${target["Người thực hiện"] || ''}</td></tr>
+        <tr><td class="fw-bold bg-light">Ghi chú kèm theo:</td><td>${target["Ghi chú"] || 'Trống'}</td></tr>
+    </table>`;
+
+    document.getElementById('detailModalBody').innerHTML = bodyDetails;
+    // Tận dụng ViewDetail Modal có sẵn trong index.html
+    const m = new bootstrap.Modal(document.getElementById('viewDetailModal'));
+    m.show();
+}
+
+// Mở khung đề xuất hạ / tra cứu nhanh
+function openDeXuatCapModal() {
+    document.getElementById('dxc_hangtau').value = "";
+    document.getElementById('dxc_size').value = "";
+    document.getElementById('dxc_trangthai').value = "";
+    const box = document.getElementById('dxc_ketqua');
+    box.classList.add('d-none');
+    box.innerHTML = "";
+    deXuatCapModal.show();
+}
+
+// Xử lý đề xuất hạ (Trả về vị trí còn rỗng hoặc cont đang tồn tối ưu)
+function handleDeXuatCap() {
+    const htau = document.getElementById('dxc_hangtau').value.trim().toLowerCase();
+    const size = document.getElementById('dxc_size').value.trim().toLowerCase();
+    const tthai = document.getElementById('dxc_trangthai').value;
+    const box = document.getElementById('dxc_ketqua');
+
+    if (!htau || !size) {
+        alert("Vui lòng nhập Hãng tàu và Size để hệ thống tính toán tồn bãi!");
+        return;
+    }
+
+    // Tìm kiếm một container phù hợp nhất trong bãi dựa trên dataNhap
+    const optimalCont = dataNhap.find(row => {
+        const matchTau = (row["Line"] || row["Hãng tàu"] || "").toLowerCase().includes(htau);
+        const matchSize = (row["Size"] || "").toLowerCase().includes(size);
+        const matchTrangThai = tthai ? (row["Trạng thái"] || "A") === tthai : true;
+        return matchTau && matchSize && matchTrangThai;
+    });
+
+    box.classList.remove('d-none');
+    if (optimalCont) {
+        box.innerHTML = `
+        <div class="alert alert-success m-0 p-2 small">
+            <i class="bi bi-cpu-fill me-1"></i><strong>ĐỀ XUẤT XUẤT BÃI:</strong><br>
+            Khuyên dùng vỏ <strong>${optimalCont["Số Container"] || optimalCont["Mã container"]}</strong> (Hạng ${optimalCont["Trạng thái"] || 'A'}).<br>
+            Vị trí hiện tại trong bãi: <span class="badge bg-danger">${optimalCont["Bãi (Vị trí)"] || "Khu bãi tồn"}</span>
+        </div>`;
+    } else {
+        box.innerHTML = `<div class="alert alert-warning m-0 p-2 small text-center">Không tìm thấy vỏ container nào khớp cấu hình trong kho bãi tồn rỗng hiện tại!</div>`;
+    }
+}
+
+// Xử lý tra cứu nhanh (Lọc trực tiếp trên bảng danh sách cấp)
+function handleTraCuuCap() {
+    const htau = document.getElementById('dxc_hangtau').value.trim().toLowerCase();
+    const size = document.getElementById('dxc_size').value.trim().toLowerCase();
+    const tthai = document.getElementById('dxc_trangthai').value;
+
+    if (!htau && !size && !tthai) {
+        renderTableCapRong(window.globalCapRongData);
+        deXuatCapModal.hide();
+        return;
+    }
+
+    const filterResult = window.globalCapRongData.filter(row => {
+        const cTau = htau ? (row["Hãng tàu"] || "").toLowerCase().includes(htau) : true;
+        const cSize = size ? (row["Size"] || "").toLowerCase().includes(size) : true;
+        const cTrangThai = tthai ? (row["Trạng thái"] || "") === tthai : true;
+        return cTau && cSize && cTrangThai;
+    });
+
+    renderTableCapRong(filterResult);
+    deXuatCapModal.hide();
+}
 
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
         const dataModal = new bootstrap.Modal(document.getElementById('dataModal'));
