@@ -740,30 +740,58 @@ async function switchGiaoNhanTab(type) {
 }
 //=====Caprong
 // Xem chi tiết thông tin (icon i)
+// Xem chi tiết thông tin container Cấp Rỗng (Sửa lỗi mapping tiêu đề)
 function viewDetailCapRong(rowIndex) {
     const target = window.globalCapRongData.find(r => r.rowIndex === rowIndex);
-    if (!target) return;
+    if (!target) {
+        alert("Không tìm thấy dữ liệu dòng này!");
+        return;
+    }
+
+    // Bảo vệ lỗi lệch chữ HOA/thường từ Google Sheets
+    const maCont = target["Mã container"] || target["Mã Container"] || target["Số Container"] || target["Số container"] || '';
+    const size = target["Size"] || target["Kích cỡ"] || '';
+    const hangTau = target["Hãng tàu"] || target["Hãng Tàu"] || target["Line"] || '';
+    const trangThai = target["Trạng thái"] || target["Phân loại"] || 'A';
+    const soSeal = target["Số Seal"] || target["Số seal"] || target["Seal"] || 'Chưa cấp';
+    const bienSo = target["Biển số xe"] || target["Biển số"] || '';
+    const khachHang = target["Khách hàng"] || target["Khách hàng lấy"] || '';
+    const gioThucHien = target["Giờ"] || target["Giờ thực hiện"] || '';
+    const ngayThucHien = target["Ngày thực hiện"] ? target["Ngày thực hiện"].split('T')[0] : '';
+    const gioNhap = target["Giờ nhập bãi"] || target["Giờ nhập"] || '';
+    const ngayNhap = target["Ngày nhập bãi"] ? target["Ngày nhập bãi"].split('T')[0] : '';
+    const tuoiCont = target["Tuổi container"] || target["Tuổi thiết bị"] || '0';
+    const nguoiThucHien = target["Người thực hiện"] || '';
+    const ghiChu = target["Ghi chú"] || 'Trống';
 
     const bodyDetails = `
     <table class="table table-bordered table-sm mb-0 bg-white small">
-        <tr><td class="fw-bold bg-light" style="width:40%;">Mã Container:</td><td class="text-primary fw-bold text-uppercase">${target["Mã container"] || ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Kích thước (Size):</td><td><span class="badge bg-secondary">${target["Size"] || ''}</span></td></tr>
-        <tr><td class="fw-bold bg-light">Hãng tàu:</td><td>${target["Hãng tàu"] || ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Trạng thái:</td><td>Hạng ${target["Trạng thái"] || 'A'}</td></tr>
-        <tr><td class="fw-bold bg-light text-danger">Số Seal niêm phong:</td><td class="text-danger fw-bold">${target["Số Seal"] || 'Chưa cấp'}</td></tr>
-        <tr><td class="fw-bold bg-light">Biển số xe nhận:</td><td>${target["Biển số xe"] || ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Khách hàng lấy:</td><td>${target["Khách hàng"] || ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Thời gian thực hiện:</td><td>${target["Giờ"] || ''} - ${target["Ngày thực hiện"] ? target["Ngày thực hiện"].split('T')[0] : ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Thời gian nhập bãi gốc:</td><td>${target["Giờ nhập bãi"] || ''} - ${target["Ngày nhập bãi"] ? target["Ngày nhập bãi"].split('T')[0] : ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Tuổi thiết bị (Năm):</td><td>${target["Tuổi container"] || '0'} năm</td></tr>
-        <tr><td class="fw-bold bg-light">Người ký duyệt eir:</td><td>${target["Người thực hiện"] || ''}</td></tr>
-        <tr><td class="fw-bold bg-light">Ghi chú kèm theo:</td><td>${target["Ghi chú"] || 'Trống'}</td></tr>
+        <tr><td class="fw-bold bg-light" style="width:40%;">Mã Container:</td><td class="text-success fw-bold text-uppercase">${maCont}</td></tr>
+        <tr><td class="fw-bold bg-light">Kích thước (Size):</td><td><span class="badge bg-secondary">${size}</span></td></tr>
+        <tr><td class="fw-bold bg-light">Hãng tàu:</td><td>${hangTau}</td></tr>
+        <tr><td class="fw-bold bg-light">Trạng thái:</td><td>Hạng ${trangThai}</td></tr>
+        <tr><td class="fw-bold bg-light text-danger">Số Seal niêm phong:</td><td class="text-danger fw-bold">${soSeal}</td></tr>
+        <tr><td class="fw-bold bg-light">Biển số xe nhận:</td><td>${bienSo}</td></tr>
+        <tr><td class="fw-bold bg-light">Khách hàng lấy:</td><td>${khachHang}</td></tr>
+        <tr><td class="fw-bold bg-light">Thời gian thực hiện:</td><td>${gioThucHien} - ${ngayThucHien}</td></tr>
+        <tr><td class="fw-bold bg-light">Thời gian nhập bãi gốc:</td><td>${gioNhap} - ${ngayNhap}</td></tr>
+        <tr><td class="fw-bold bg-light">Tuổi thiết bị (Năm):</td><td>${tuoiCont} năm</td></tr>
+        <tr><td class="fw-bold bg-light">Người ký duyệt EIR:</td><td>${nguoiThucHien}</td></tr>
+        <tr><td class="fw-bold bg-light">Ghi chú kèm theo:</td><td>${ghiChu}</td></tr>
     </table>`;
 
-    document.getElementById('detailModalBody').innerHTML = bodyDetails;
-    // Tận dụng ViewDetail Modal có sẵn trong index.html
-    const m = new bootstrap.Modal(document.getElementById('viewDetailModal'));
-    m.show();
+    const detailBodyEl = document.getElementById('detailModalBody');
+    if(detailBodyEl) {
+        detailBodyEl.innerHTML = bodyDetails;
+        // Kích hoạt hiển thị Modal an toàn
+        const mEl = document.getElementById('viewDetailModal');
+        if(mEl) {
+            const m = bootstrap.Modal.getInstance(mEl) || new bootstrap.Modal(mEl);
+            m.show();
+        } else {
+            alert("Lỗi: Không tìm thấy khung Modal 'viewDetailModal' trong HTML!");
+        }
+    }
 }
 
 // Mở khung đề xuất hạ / tra cứu nhanh
@@ -778,59 +806,93 @@ function openDeXuatCapModal() {
 }
 
 // Xử lý đề xuất hạ (Trả về vị trí còn rỗng hoặc cont đang tồn tối ưu)
+// Xử lý đề xuất xuất bãi (Cấp rỗng) an toàn
 function handleDeXuatCap() {
-    const htau = document.getElementById('dxc_hangtau').value.trim().toLowerCase();
-    const size = document.getElementById('dxc_size').value.trim().toLowerCase();
-    const tthai = document.getElementById('dxc_trangthai').value;
-    const box = document.getElementById('dxc_ketqua');
+    // Phương án dự phòng (fallback) phòng trường hợp file HTML đặt sai ID từ dxc_ thành dx_
+    const elHtau = document.getElementById('dxc_hangtau') || document.getElementById('dx_hangtau');
+    const elSize = document.getElementById('dxc_size') || document.getElementById('dx_size');
+    const elTthai = document.getElementById('dxc_trangthai') || document.getElementById('dx_trangthai');
+    const box = document.getElementById('dxc_ketqua') || document.getElementById('dx_ketqua');
 
-    if (!htau || !size) {
-        alert("Vui lòng nhập Hãng tàu và Size để hệ thống tính toán tồn bãi!");
+    if(!elHtau || !elSize) {
+        alert("Lỗi hệ thống: Không tìm thấy các ô cấu hình nhập liệu trong HTML.");
         return;
     }
 
-    // Tìm kiếm một container phù hợp nhất trong bãi dựa trên dataNhap
+    const htau = elHtau.value.trim().toLowerCase();
+    const size = elSize.value.trim().toLowerCase();
+    const tthai = elTthai ? elTthai.value : "";
+
+    if (!htau || !size) {
+        alert("Vui lòng nhập đầy đủ Hãng tàu và Size để hệ thống tính toán tồn bãi!");
+        return;
+    }
+
+    // Tìm kiếm một container phù hợp nhất trong bãi dựa trên dữ liệu nhập tồn bãi (dataNhap)
     const optimalCont = dataNhap.find(row => {
-        const matchTau = (row["Line"] || row["Hãng tàu"] || "").toLowerCase().includes(htau);
-        const matchSize = (row["Size"] || "").toLowerCase().includes(size);
-        const matchTrangThai = tthai ? (row["Trạng thái"] || "A") === tthai : true;
+        const lineVal = (row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || "").toString().toLowerCase();
+        const sizeVal = (row["Size"] || "").toString().toLowerCase();
+        const statusVal = row["Trạng thái"] || row["Phân loại"] || "A";
+        
+        const matchTau = lineVal.includes(htau);
+        const matchSize = sizeVal.includes(size);
+        const matchTrangThai = tthai ? statusVal === tthai : true;
         return matchTau && matchSize && matchTrangThai;
     });
 
-    box.classList.remove('d-none');
-    if (optimalCont) {
-        box.innerHTML = `
-        <div class="alert alert-success m-0 p-2 small">
-            <i class="bi bi-cpu-fill me-1"></i><strong>ĐỀ XUẤT XUẤT BÃI:</strong><br>
-            Khuyên dùng vỏ <strong>${optimalCont["Số Container"] || optimalCont["Mã container"]}</strong> (Hạng ${optimalCont["Trạng thái"] || 'A'}).<br>
-            Vị trí hiện tại trong bãi: <span class="badge bg-danger">${optimalCont["Bãi (Vị trí)"] || "Khu bãi tồn"}</span>
-        </div>`;
-    } else {
-        box.innerHTML = `<div class="alert alert-warning m-0 p-2 small text-center">Không tìm thấy vỏ container nào khớp cấu hình trong kho bãi tồn rỗng hiện tại!</div>`;
+    if(box) {
+        box.classList.remove('d-none');
+        if (optimalCont) {
+            const codeCont = optimalCont["Số Container"] || optimalCont["Mã container"] || optimalCont["Số container"] || "Chưa rõ mã";
+            const viTriBai = optimalCont["Bãi"] || optimalCont["Bãi (Vị trí)"] || "Khu bãi tồn";
+            const hangCont = optimalCont["Trạng thái"] || optimalCont["Phân loại"] || 'A';
+            box.innerHTML = `
+            <div class="alert alert-success m-0 p-2 small">
+                <i class="bi bi-cpu-fill me-1"></i><strong>ĐỀ XUẤT XUẤT BÃI THÀNH CÔNG:</strong><br>
+                Khuyên dùng vỏ: <strong class="text-primary">${codeCont}</strong> (Hạng ${hangCont}).<br>
+                Vị trí hiện tại trong bãi: <span class="badge bg-danger">${viTriBai}</span>
+            </div>`;
+        } else {
+            box.innerHTML = `<div class="alert alert-warning m-0 p-2 small text-center">Không tìm thấy vỏ container nào khớp cấu hình trong kho bãi tồn rỗng hiện tại!</div>`;
+        }
     }
 }
 
-// Xử lý tra cứu nhanh (Lọc trực tiếp trên bảng danh sách cấp)
+// Xử lý tra cứu nhanh cấp rỗng
 function handleTraCuuCap() {
-    const htau = document.getElementById('dxc_hangtau').value.trim().toLowerCase();
-    const size = document.getElementById('dxc_size').value.trim().toLowerCase();
-    const tthai = document.getElementById('dxc_trangthai').value;
+    const elHtau = document.getElementById('dxc_hangtau') || document.getElementById('dx_hangtau');
+    const elSize = document.getElementById('dxc_size') || document.getElementById('dx_size');
+    const elTthai = document.getElementById('dxc_trangthai') || document.getElementById('dx_trangthai');
+
+    const htau = elHtau ? elHtau.value.trim().toLowerCase() : "";
+    const size = elSize ? elSize.value.trim().toLowerCase() : "";
+    const tthai = elTthai ? elTthai.value : "";
 
     if (!htau && !size && !tthai) {
         renderTableCapRong(window.globalCapRongData);
-        deXuatCapModal.hide();
+        if(typeof deXuatCapModal !== 'undefined') deXuatCapModal.hide();
         return;
     }
 
     const filterResult = window.globalCapRongData.filter(row => {
-        const cTau = htau ? (row["Hãng tàu"] || "").toLowerCase().includes(htau) : true;
-        const cSize = size ? (row["Size"] || "").toLowerCase().includes(size) : true;
-        const cTrangThai = tthai ? (row["Trạng thái"] || "") === tthai : true;
+        const rowTau = (row["Hãng tàu"] || row["Hãng Tàu"] || "").toLowerCase();
+        const rowSize = (row["Size"] || "").toLowerCase();
+        const rowTthai = row["Trạng thái"] || row["Phân loại"] || "";
+
+        const cTau = htau ? rowTau.includes(htau) : true;
+        const cSize = size ? rowSize.includes(size) : true;
+        const cTrangThai = tthai ? rowTthai === tthai : true;
         return cTau && cSize && cTrangThai;
     });
 
     renderTableCapRong(filterResult);
-    deXuatCapModal.hide();
+    
+    // Tự động đóng modal tra cứu sau khi lọc thành công
+    const modalEl = document.getElementById('deXuatCapModal');
+    if(modalEl) {
+        const m = bootstrap.Modal.getInstance(modalEl);
+        if(m) m.hide();
+    }
 }
 
         // ================= 5. FORM NHẬP LIỆU CONTAINER ĐỘNG =================
