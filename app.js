@@ -172,9 +172,9 @@
         }
         //======Adding QLLenh
         //======adding giaonhan
-function switchGiaoNhanTab(tabName) {
-    currentGiaoNhanTab = tabName;
-    loadGiaoNhanData(tabName);
+function switchGiaoNhanTab(type) {
+    currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại
+    loadGiaoNhanData(type);    // Gọi hàm tải dữ liệu tương ứng
 }
 
 // Bộ nhớ đệm lưu dữ liệu hạ rỗng toàn cục phục vụ tra cứu
@@ -185,12 +185,16 @@ async function loadGiaoNhanData(type) {
     try {
         const res = await fetch(API_URL + "?type=" + type);
         const data = await res.json();
+        
         if(type === 'HaRong') {
             window.globalHaRongData = data;
             renderTableHaRong(data);
+        } else if(type === 'CapRong') {
+            window.globalCapRongData = data;
+            renderTableCapRong(data);
         }
     } catch (e) {
-        console.error("Lỗi tải dữ liệu giao nhận:", e);
+        console.error("Lỗi tải dữ liệu giao nhận (" + type + "):", e);
     }
     showLoading(false);
 }
