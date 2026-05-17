@@ -70,9 +70,14 @@
             }
             // Đặt đoạn code này sau khi gán currentUser thành công trong hàm Login / Check Authen
 if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'kythuat')) {
-    document.getElementById('menu-giamdinh-wrapper').classList.remove('d-none');
+    const menuWrapper = document.getElementById('menu-giamdinh-wrapper');
+    if (menuWrapper) menuWrapper.classList.remove('d-none');
+    
+    // Tự động tải dữ liệu giám định ngay khi đăng nhập thành công để tránh bảng bị trắng
+    fetchGiamDinhData(); 
 } else {
-    document.getElementById('menu-giamdinh-wrapper').classList.add('d-none');
+    const menuWrapper = document.getElementById('menu-giamdinh-wrapper');
+    if (menuWrapper) menuWrapper.classList.add('d-none');
 }
 
             document.getElementById('login-screen').style.display = 'none';
@@ -934,26 +939,52 @@ function toggleSubmenu(e, id) {
 }
 
 // Lấy dữ liệu Giám định từ Google Sheets
+// 1. SỬA LẠI ĐOẠN ĐĂNG NHẬP / PHÂN QUYỀN ĐỂ TỰ ĐỘNG LOAD DỮ LIỆU KHI ĐĂNG NHẬP
+// Tìm khu vực kiểm tra role (sau khi xác định currentUser) và bổ sung lệnh gọi hàm:
+if (currentUser && (currentUser.role === 'admin' || currentUser.role === 'kythuat')) {
+    const menuWrapper = document.getElementById('menu-giamdinh-wrapper');
+    if (menuWrapper) menuWrapper.classList.remove('d-none');
+    
+    // Tự động tải dữ liệu giám định ngay khi đăng nhập thành công để tránh bảng bị trắng
+    fetchGiamDinhData(); 
+} else {
+    const menuWrapper = document.getElementById('menu-giamdinh-wrapper');
+    if (menuWrapper) menuWrapper.classList.add('d-none');
+}
+
+// 2. SỬA HÀM LẤY DỮ LIỆU ĐỂ KIỂM SOÁT LỖI TRẮNG TRANG
 async function fetchGiamDinhData() {
+    // Nếu chưa đăng nhập hoặc không đúng quyền thì không tải
+    if (!currentUser || (currentUser.role !== 'admin' && currentUser.role !== 'kythuat')) return;
+    
     showLoading(true);
     try {
         const response = await fetch(`${API_URL}?type=GiamDinh`);
         dataGiamDinh = await response.json();
-        renderGiamDinhTable(dataGiamDinh);
+        
+        // Kiểm tra nếu dữ liệu trả về hợp lệ thì render ra bảng
+        if (Array.isArray(dataGiamDinh)) {
+            renderGiamDinhTable(dataGiamDinh);
+        } else {
+            console.error("Dữ liệu trả về không phải mảng:", dataGiamDinh);
+            document.getElementById('tbody-giamdinh').innerHTML = `<tr><td colspan="8" class="text-center text-danger py-3">Lỗi định dạng dữ liệu từ Sheet!</td></tr>`;
+        }
     } catch (err) {
         console.error("Lỗi đồng bộ dữ liệu giám định:", err);
+        document.getElementById('tbody-giamdinh').innerHTML = `<tr><td colspan="8" class="text-center text-danger py-3">Không thể kết nối tới Google Sheets!</td></tr>`;
     } finally {
         showLoading(false);
     }
 }
 
-// Render dữ liệu lên View Bảng Giám định
+// 3. CẬP NHẬT GIAO DIỆN HIỂN THỊ TÍCH XANH / TÍCH ĐỎ
 function renderGiamDinhTable(data) {
     const tbody = document.getElementById('tbody-giamdinh');
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (!data || data.error || data.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-3">Chưa có dữ liệu giám định container nào.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center text-muted py-4">Chưa có dữ liệu giám định container nào trên Sheet.</td></tr>`;
         return;
     }
 
@@ -963,18 +994,24 @@ function renderGiamDinhTable(data) {
         let statusClass = row['Trạng thái'] === 'A' ? 'bg-status-a' : row['Trạng thái'] === 'B' ? 'bg-status-b' : 'bg-status-c';
         let textTrangThai = row['Trạng thái'] === 'A' ? 'A (Tốt)' : row['Trạng thái'] === 'B' ? 'B (Bình thường)' : 'C (Tệ)';
         
-        let badgeRepair = row['Cần sửa chữa'] === 'CÓ' 
-            ? `<span class="badge-repair-yes"><i class="bi bi-exclamation-circle-fill me-1"></i> CÓ</span>` 
-            : `<span class="badge-repair-no">Không</span>`;
+        // --- ĐỔI HIỂN THỊ THÀNH TÍCH XANH / TÍCH ĐỎ THEO YÊU CẦU ---
+        let badgeRepair = "";
+        if (row['Cần sửa chữa'] === 'CÓ') {
+            // Tích xanh hình tròn kèm icon của Bootstrap
+            badgeRepair = `<span class="text-success fs-5" title="Đủ điều kiện cần sửa chữa"><i class="bi bi-check-circle-fill"></i></span>`;
+        } else {
+            // Tích đỏ hình tròn dập chéo dấu X
+            badgeRepair = `<span class="text-danger fs-5" title="Không cần sửa chữa"><i class="bi bi-x-circle-fill"></i></span>`;
+        }
 
         tr.innerHTML = `
             <td class="ps-3 fw-bold text-secondary">${index + 1}</td>
-            <td class="fw-bold text-dark">${row['Mã container'] || ''}</td>
-            <td class="fw-bold">${row['Hãng tàu'] || ''}</td>
+            <td class="fw-bold text-primary">${row['Mã container'] || ''}</td>
+            <td class="fw-bold text-dark">${row['Hãng tàu'] || ''}</td>
             <td><small class="text-wrap d-block" style="max-width: 250px;">${row['Tình trạng'] || 'Không lỗi'}</small></td>
             <td><span class="badge ${statusClass} py-1 px-2">${textTrangThai}</span></td>
             <td><span class="text-muted small">${row['Ghi chú'] || '-'}</span></td>
-            <td>${badgeRepair}</td>
+            <td class="text-center">${badgeRepair}</td>
             <td class="text-end pe-3">
                 <button class="btn btn-sm btn-light border me-1 py-1 px-2" title="Lịch sử ghi nhận" onclick="viewHistoryGiamDinh('${row['Mã container']}')">
                     <span class="fw-bold text-dark small" style="font-family: monospace;">H</span>
@@ -987,7 +1024,6 @@ function renderGiamDinhTable(data) {
         tbody.appendChild(tr);
     });
 }
-
 // Mở form điền mới phiếu giám định
 function openModalGiamDinh() {
     document.getElementById('formGiamDinh').reset();
