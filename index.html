@@ -3,21 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
     <title>ICD SOTRANS - Chào mừng đến Hệ thống quản lý</title>
-
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-
-    <link rel="stylesheet"
-          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
-
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
     <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
 
+    <!-- LOADER -->
     <div id="loader">
         <div class="text-center">
             <div class="spinner-border text-primary"></div>
@@ -25,6 +20,7 @@
         </div>
     </div>
 
+    <!-- MÀN HÌNH ĐĂNG NHẬP -->
     <div id="login-screen">
         <div class="login-box">
             <div class="text-center mb-4">
@@ -32,206 +28,232 @@
                 <h4 class="fw-bold mt-2 text-dark">ICD SOTRANS</h4>
                 <p class="text-muted small">Chào mừng đến Hệ thống quản lý</p>
             </div>
-
             <form onsubmit="handleLogin(event)">
                 <div class="mb-3">
                     <label class="form-label small fw-bold">Tài khoản</label>
-                    <input type="text"
-                           id="username"
-                           class="form-control"
-                           required>
+                    <input type="text" id="username" class="form-control" placeholder="Nhập tài khoản" required>
                 </div>
-
                 <div class="mb-4">
                     <label class="form-label small fw-bold">Mật khẩu</label>
-                    <input type="password"
-                           id="password"
-                           class="form-control"
-                           required>
+                    <input type="password" id="password" class="form-control" placeholder="Nhập mật khẩu" required>
                 </div>
-
-                <button type="submit"
-                        class="btn btn-primary w-100 fw-bold py-2">
-                    ĐĂNG NHẬP
-                </button>
+                <button type="submit" class="btn btn-primary w-100 fw-bold py-2">ĐĂNG NHẬP</button>
             </form>
         </div>
     </div>
 
+    <!-- HỆ THỐNG CHÍNH -->
     <div id="app-screen">
-
+        <!-- SIDEBAR -->
         <div class="sidebar">
-
-            <div class="sidebar-brand">
-                CONTAINER MANAGEMENT
+            <div class="sidebar-brand"><i class="bi bi-layers-fill text-primary me-2"></i> CONTAINER MANAGEMENT</div>
+            <div class="p-3 mb-2" style="background: rgba(255,255,255,0.05);">
+                <div class="fw-bold text-white" id="user-fullname">Đang tải...</div>
+                <div class="small text-warning fw-bold mt-1" id="user-role">...</div>
             </div>
-
-            <div class="p-3 mb-2 user-box">
-                <div class="fw-bold text-white" id="user-fullname">
-                    Đang tải...
+            
+            <div id="menu-container">
+                <a class="nav-link active" onclick="switchPage('page-dashboard')"><i class="bi bi-pie-chart"></i> Dashboard</a>
+                
+                <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Nghiệp vụ</div>
+                
+                <!-- Menu hiển thị linh hoạt theo chức năng -->
+                <a class="nav-link role-section view-nhap" onclick="switchPage('page-cont-nhap')"><i class="bi bi-box-arrow-in-right"></i> QL. Nhập Bãi / Vị trí</a>
+                <a class="nav-link role-section view-cap" onclick="switchPage('page-cont-cap')"><i class="bi bi-box-arrow-up-right"></i> QL. Cấp Rỗng</a>
+                
+                <!-- Admin Tools -->
+                <div class="role-section view-admin">
+                    <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Quản trị</div>
+                    <a class="nav-link" onclick="switchPage('page-users')"><i class="bi bi-people"></i> Tài khoản NV</a>
                 </div>
-
-                <div class="small text-warning fw-bold mt-1"
-                     id="user-role">
-                </div>
+                
+                <a class="nav-link text-danger mt-4" onclick="location.reload()"><i class="bi bi-box-arrow-left"></i> Đăng xuất</a>
             </div>
-
-            <a class="nav-link active"
-               onclick="switchPage('page-dashboard', event)">
-                Dashboard
-            </a>
-
-            <a class="nav-link"
-               onclick="switchPage('page-cont-nhap', event)">
-                QL. Nhập Bãi
-            </a>
-
-            <a class="nav-link"
-               onclick="switchPage('page-cont-cap', event)">
-                QL. Cấp Rỗng
-            </a>
-
-            <a class="nav-link"
-               onclick="switchPage('page-users', event)">
-                Tài khoản NV
-            </a>
-
         </div>
 
+        <!-- MAIN CONTENT -->
         <div class="main-content">
-
             <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="fw-bold m-0"
-                    id="page-title">
-                    Dashboard
-                </h4>
-
-                <div class="text-muted fw-bold"
-                     id="current-date">
-                </div>
+                <h4 class="fw-bold m-0" id="page-title">Dashboard Tổng Quan</h4>
+                <div class="text-muted fw-bold" id="current-date"></div>
             </div>
-
-            <!-- DASHBOARD -->
-            <div id="page-dashboard"
-                 class="page active">
-
+            
+            <!-- TRANG 1: DASHBOARD -->
+            <div id="page-dashboard" class="page active">
                 <div class="row">
-
-                    <div class="col-md-4">
-                        <div class="card p-4 text-center">
-                            <h6>Tổng Cont Đang Tồn Bãi</h6>
-                            <h1 id="dash-nhap">0</h1>
+                    <div class="col-md-4 mb-4">
+                        <div class="card p-4 shadow-sm h-100 text-center">
+                            <h6 class="text-muted fw-bold">Tổng Cont Đang Tồn Bãi</h6>
+                            <h1 class="text-primary fw-bold" id="dash-nhap">0</h1>
                         </div>
                     </div>
-
-                    <div class="col-md-4">
-                        <div class="card p-4 text-center">
-                            <h6>Tổng Cont Đã Cấp</h6>
-                            <h1 id="dash-cap">0</h1>
+                    <div class="col-md-4 mb-4">
+                        <div class="card p-4 shadow-sm h-100 text-center">
+                            <h6 class="text-muted fw-bold">Tổng Cont Đã Cấp</h6>
+                            <h1 class="text-success fw-bold" id="dash-cap">0</h1>
                         </div>
                     </div>
-
-                </div>
-
-                <div class="card p-3 mt-3">
-                    <canvas id="contChart"></canvas>
-                </div>
-
-            </div>
-
-            <!-- NHAP -->
-            <div id="page-cont-nhap"
-                 class="page">
-
-                <div class="card p-3">
-
-                    <div class="d-flex justify-content-between mb-3">
-
-                        <h5>Báo cáo nhập container</h5>
-
-                        <button class="btn btn-primary btn-sm"
-                                onclick="loadData('ContNhap')">
-                            Cập nhật
-                        </button>
-
+                    <div class="col-md-4 mb-4 role-section view-admin">
+                        <div class="card p-4 shadow-sm h-100 text-center">
+                            <h6 class="text-muted fw-bold">Xuất Báo Cáo Hệ Thống</h6>
+                            <button class="btn btn-outline-primary mt-2" onclick="exportExcel('ContNhap')"><i class="bi bi-download"></i> Tải BC Tồn Bãi (CSV)</button>
+                            <button class="btn btn-outline-success mt-2" onclick="exportExcel('ContCap')"><i class="bi bi-download"></i> Tải BC Đã Cấp (CSV)</button>
+                        </div>
                     </div>
-
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Container</th>
-                                <th>Size</th>
-                                <th>Line</th>
-                                <th>Bãi</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="tbody-nhap"></tbody>
-                    </table>
-
                 </div>
-            </div>
-
-            <!-- CAP -->
-            <div id="page-cont-cap"
-                 class="page">
-
-                <div class="card p-3">
-
-                    <div class="d-flex justify-content-between mb-3">
-
-                        <h5>Báo cáo cấp container</h5>
-
-                        <button class="btn btn-success btn-sm"
-                                onclick="loadData('ContCap')">
-                            Cập nhật
-                        </button>
-
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="card p-3 shadow-sm">
+                            <h6 class="fw-bold text-center">Tỉ lệ Cont Nhập - Cấp</h6>
+                            <!-- Đã bọc div có height cố định để fix lỗi Chart.js -->
+                            <div style="position: relative; height: 250px; width: 100%;">
+                                <canvas id="contChart"></canvas>
+                            </div>
+                        </div>
                     </div>
-
-                    <table class="table table-hover">
-                        <thead>
-                            <tr>
-                                <th>Container</th>
-                                <th>Size</th>
-                                <th>Line</th>
-                                <th>Giao</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="tbody-cap"></tbody>
-                    </table>
-
                 </div>
             </div>
 
-            <!-- USERS -->
-            <div id="page-users"
-                 class="page">
-
-                <div class="card p-3">
-
-                    <h5 class="mb-3">
-                        Quản lý tài khoản
-                    </h5>
-
-                    <table class="table table-hover">
-
-                        <thead>
-                            <tr>
-                                <th>Username</th>
-                                <th>Họ tên</th>
-                                <th>Role</th>
-                            </tr>
-                        </thead>
-
-                        <tbody id="tbody-users"></tbody>
-
-                    </table>
-
+            <!-- TRANG 2: CONTAINER NHẬP BÃI -->
+            <div id="page-cont-nhap" class="page">
+                <div class="card shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0 text-primary">BÁO CÁO NHẬP CONTAINER RỖNG</h6>
+                        <div>
+                            <!-- Nút Thêm Lệnh chỉ hiện cho Điều Độ hoặc Admin -->
+                            <button class="btn btn-primary btn-sm role-section view-dieudo" onclick="openModal('add', 'ContNhap')"><i class="bi bi-plus-lg"></i> Lập phiếu EIR Hạ Rỗng</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="loadData('ContNhap')"><i class="bi bi-arrow-clockwise"></i> Cập nhật</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Stt</th><th>Số Container</th><th>Size</th><th>Line</th>
+                                    <th>Ngày nhập bãi</th><th>Bãi (Vị trí)</th><th>Ghi chú (M&R)</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-nhap"></tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
+            <!-- TRANG 3: CONTAINER CẤP RỖNG -->
+            <div id="page-cont-cap" class="page">
+                <div class="card shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0 text-success">BÁO CÁO CẤP CONTAINER RỖNG</h6>
+                        <div>
+                            <button class="btn btn-success btn-sm role-section view-dieudo" onclick="openModal('add', 'ContCap')"><i class="bi bi-plus-lg"></i> Lập phiếu EIR Cấp Rỗng</button>
+                            <button class="btn btn-outline-secondary btn-sm" onclick="loadData('ContCap')"><i class="bi bi-arrow-clockwise"></i> Cập nhật</button>
+                        </div>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle text-nowrap">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Stt</th><th>Số Container</th><th>Size</th><th>Line</th>
+                                    <th>Ngày Nhập bãi</th><th>Ngày thực hiện</th><th>Giao</th><th>Cảng ct</th><th>Ghi chú</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-cap"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- TRANG 4: ADMIN - TÀI KHOẢN -->
+            <div id="page-users" class="page">
+                <div class="card shadow-sm p-3">
+                    <div class="d-flex justify-content-between align-items-center mb-3">
+                        <h6 class="fw-bold m-0 text-dark"><i class="bi bi-people me-2"></i>QUẢN LÝ TÀI KHOẢN NHÂN VIÊN</h6>
+                        <button class="btn btn-primary btn-sm" onclick="openUserModal('add')"><i class="bi bi-plus-lg"></i> Thêm Tài Khoản</button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover align-middle">
+                            <thead class="table-light">
+                                <tr>
+                                    <th>Tên đăng nhập</th>
+                                    <th>Mật khẩu</th>
+                                    <th>Họ và Tên</th>
+                                    <th>Vai trò</th>
+                                    <th class="text-center">Thao tác</th>
+                                </tr>
+                            </thead>
+                            <tbody id="tbody-users"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL ĐỘNG CHO THÊM / SỬA CONTAINER -->
+    <div class="modal fade" id="dataModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header bg-primary text-white" id="modal-header">
+                    <h5 class="modal-title fw-bold" id="modalTitle">Cập nhật dữ liệu</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="dataForm">
+                        <input type="hidden" id="m_type"> <!-- ContNhap hoặc ContCap -->
+                        <input type="hidden" id="m_rowIndex">
+                        <div class="row g-3" id="form-fields"></div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="saveData()">LƯU HỆ THỐNG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- MODAL CHO QUẢN LÝ TÀI KHOẢN -->
+    <div class="modal fade" id="userModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header bg-dark text-white">
+                    <h5 class="modal-title fw-bold" id="userModalTitle">Cập nhật Tài khoản</h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form id="userForm">
+                        <input type="hidden" id="u_rowIndex">
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Tên đăng nhập (Username)</label>
+                            <input type="text" class="form-control" id="u_username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Mật khẩu</label>
+                            <input type="text" class="form-control" id="u_password" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Họ và Tên</label>
+                            <input type="text" class="form-control" id="u_hoten" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label small fw-bold">Vai trò (Role)</label>
+                            <select class="form-select" id="u_role">
+                                <option value="admin">Quản trị viên (Admin)</option>
+                                <option value="dieudo">Điều độ bãi</option>
+                                <option value="nangha">Lái cẩu / Nâng hạ</option>
+                                <option value="kythuat">Kỹ thuật viên (M&R)</option>
+                            </select>
+                        </div>
+                    </form>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+                    <button type="button" class="btn btn-primary fw-bold" onclick="saveUser()">LƯU TÀI KHOẢN</button>
+                </div>
+            </div>
         </div>
     </div>
 
