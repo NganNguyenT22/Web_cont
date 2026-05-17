@@ -176,7 +176,7 @@
 function switchGiaoNhanTab(type) {
     currentGiaoNhanTab = type; // Cập nhật trạng thái tab hiện tại
     
-    // Cập nhật giao diện class active cho các nút bấm tab nếu có
+    // Cập nhật giao diện class active cho các nút bấm tab
     const btnHaRong = document.getElementById('btn-tab-harong');
     const btnCapRong = document.getElementById('btn-tab-caprong');
     if(btnHaRong && btnCapRong) {
@@ -192,6 +192,7 @@ function switchGiaoNhanTab(type) {
     // Tải dữ liệu mới cho tab được chọn
     loadGiaoNhanData(type);    
 }
+
 
 // Bộ nhớ đệm lưu dữ liệu hạ rỗng toàn cục phục vụ tra cứu
 window.globalHaRongData = [];
@@ -214,7 +215,7 @@ async function loadGiaoNhanData(type) {
         console.error("Lỗi tải dữ liệu giao nhận (" + type + "):", e);
         alert("Không thể tải dữ liệu tab " + type + ". Vui lòng thử lại!");
     } finally {
-        showLoading(false); // Chắc chắn tắt loader, không lo bị kẹt màn hình
+        showLoading(false); // Đảm bảo luôn tắt loader để tránh treo/kẹt màn hình
     }
 }
         //======adding giaonhan
@@ -581,22 +582,29 @@ function renderTableCapRong(data) {
     list.forEach((row, index) => {
         let badgeColor = "bg-success";
         let labelText = "A (Tốt)";
-        if (row["Trạng thái"] === "B") { badgeColor = "bg-warning text-dark"; labelText = "B (Bình thường)"; }
-        if (row["Trạng thái"] === "C") { badgeColor = "bg-danger"; labelText = "C (Tệ)"; }
+        
+        // Chấp nhận cả chữ thường và chữ hoa từ Google Sheets để tránh lỗi không nhận diện hạng vỏ
+        const trangThaiVo = row["Trạng thái"] || row["Trạng thái "] || row["Hạng"] || "A";
+        if (trangThaiVo === "B") { badgeColor = "bg-warning text-dark"; labelText = "B (Bình thường)"; }
+        if (trangThaiVo === "C") { badgeColor = "bg-danger"; labelText = "C (Tệ)"; }
+
+        const maCont = row["Mã container"] || row["Mã Container"] || row["Số Container"] || '';
+        const sizeCont = row["Size"] || '';
+        const hangTauCont = row["Hãng tàu"] || row["Hãng Tàu"] || '';
 
         html += `
         <tr>
             <td>${index + 1}</td>
-            <td class="fw-bold text-dark">${row["Mã container"] || ''}</td>
-            <td><span class="badge bg-secondary">${row["Size"] || ''}</span></td>
-            <td>${row["Hãng tàu"] || ''}</td>
+            <td class="fw-bold text-dark text-uppercase">${maCont}</td>
+            <td><span class="badge bg-secondary">${sizeCont}</span></td>
+            <td>${hangTauCont}</td>
             <td><span class="badge ${badgeColor}">${labelText}</span></td>
             <td class="text-center">
                 <div class="btn-group btn-group-sm">
-                    <button class="btn btn-outline-info" title="Chi tiết thông tin (i)" onclick="viewDetailCapRong(${row.rowIndex})">
+                    <button class="btn btn-outline-info" title="Chi tiết thông tin" onclick="viewDetailCapRong(${row.rowIndex})">
                         <i class="bi bi-info-circle"></i>
                     </button>
-                    <button class="btn btn-outline-primary" title="Chỉnh sửa (Bút)" onclick="openEirCapModal('edit', ${row.rowIndex})">
+                    <button class="btn btn-outline-primary" title="Chỉnh sửa" onclick="openEirCapModal('edit', ${row.rowIndex})">
                         <i class="bi bi-pencil"></i>
                     </button>
                     ${currentUser && currentUser.role === 'admin' ? `
@@ -807,8 +815,8 @@ function openDeXuatCapModal() {
 
 // Xử lý đề xuất hạ (Trả về vị trí còn rỗng hoặc cont đang tồn tối ưu)
 // Xử lý đề xuất xuất bãi (Cấp rỗng) an toàn
-function handleDeXuatCap() {
-    // Phương án dự phòng (fallback) phòng trường hợp file HTML đặt sai ID từ dxc_ thành dx_
+// Xử lý đề xuất xuất bãi (Cấp rỗng) an toàn và tự động đồng bộ kho bãi tồn
+async function handleDeXuatCap() {
     const elHtau = document.getElementById('dxc_hangtau') || document.getElementById('dx_hangtau');
     const elSize = document.getElementById('dxc_size') || document.getElementById('dx_size');
     const elTthai = document.getElementById('dxc_trangthai') || document.getElementById('dx_trangthai');
@@ -828,7 +836,19 @@ function handleDeXuatCap() {
         return;
     }
 
-    // Tìm kiếm một container phù hợp nhất trong bãi dựa trên dữ liệu nhập tồn bãi (dataNhap)
+    // SỬA LỖI SCOPE: Nếu dữ liệu tồn bãi dataNhap chưa được tải, tự động tải trực tuyến ngay lập tức
+    if (!dataNhap || dataNhap.length === 0) {
+        showLoading(true);
+        try {
+            const res = await fetch(API_URL + "?type=ContNhap");
+            dataNhap = await res.json();
+        } catch (err) {
+            console.error("Không thể kết nối kho bãi tồn để lấy dữ liệu đề xuất:", err);
+        }
+        showLoading(false);
+    }
+
+    // Tiến hành quét tìm container phù hợp nhất trong bãi tồn rỗng
     const optimalCont = dataNhap.find(row => {
         const lineVal = (row["Line"] || row["Hãng tàu"] || row["Hãng Tàu"] || "").toString().toLowerCase();
         const sizeVal = (row["Size"] || "").toString().toLowerCase();
