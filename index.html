@@ -63,6 +63,23 @@
                 <!--adding-->
                 <a class="nav-link role-section view-dieudo" onclick="switchPage('page-quanlylenh')"> <i class="bi bi-clipboard-check"></i> QL. Lệnh</a>
                 <a href="#" class="nav-link text-white role-section view-giaonhan" onclick="switchPage('page-giaonhan')"><i class="bi bi-truck me-2"></i> QL. Giao Nhận</a>
+                <div id="menu-giamdinh-wrapper" class="d-none">
+    <hr class="text-white-50 my-2">
+    <div class="sidebar-dropdown">
+        <a href="#" class="nav-link text-white d-flex align-items-center" onclick="toggleSubmenu(event, 'submenu-giamdinh')">
+            <i class="bi bi-shield-check me-2"></i> <span>Giám định & Sửa chữa</span>
+            <i class="bi bi-chevron-down ms-auto small transition-icon" id="icon-giamdinh"></i>
+        </a>
+        <div class="submenu d-none ps-3 animate fadeIn" id="submenu-giamdinh">
+            <a href="#" class="nav-item text-white-50 py-2 d-block small text-decoration-none" onclick="switchPage('page-quanlytinhtrang')">
+                <i class="bi bi-activity me-2"></i> Quản lý tình trạng
+            </a>
+            <a href="#" class="nav-item text-white-50 py-2 d-block small text-decoration-none" onclick="switchPage('page-suachua')">
+                <i class="bi bi-wrench-amber me-2"></i> Sửa chữa
+            </a>
+        </div>
+    </div>
+</div>
                 <!-- Admin Tools -->
                 <div class="role-section view-admin">
                     <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Quản trị</div>
@@ -228,7 +245,145 @@
     </div>
 </div>
 <!--Giam dinh-->
+<div id="page-quanlytinhtrang" class="app-page container-fluid py-4 d-none">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h4 class="fw-bold text-dark mb-1">Quản Lý Tình Trạng Vỏ Container</h4>
+            <p class="text-muted small mb-0">Giám định, phân loại tình trạng vật lý và xác định hạng mục sửa chữa</p>
+        </div>
+        <button class="btn btn-primary btn-sm px-3 shadow-sm rounded-2" onclick="openModalGiamDinh()">
+            <i class="bi bi-plus-lg me-1"></i> Tạo phiếu giám định
+        </button>
+    </div>
 
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0" id="table-giamdinh">
+                <thead class="table-light fw-bold text-secondary text-uppercase small">
+                    <tr>
+                        <th class="ps-3" style="width: 60px;">STT</th>
+                        <th>Mã Container</th>
+                        <th>Hãng Tàu</th>
+                        <th>Tình Trạng (Lỗi)</th>
+                        <th>Trạng Thái</th>
+                        <th>Ghi Chú</th>
+                        <th>Cần Sửa Chữa</th>
+                        <th class="text-end pe-3" style="width: 120px;">Hành động</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-giamdinh">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div id="page-suachua" class="app-page container-fluid py-4 d-none">
+    <div class="mb-4">
+        <h4 class="fw-bold text-dark mb-1">Danh Sách Container Cần Sửa Chữa</h4>
+        <p class="text-muted small mb-0">Hệ thống tự động lọc các container có trạng thái không đạt chuẩn từ phòng Giám định</p>
+    </div>
+
+    <div class="card border-0 shadow-sm rounded-3 overflow-hidden">
+        <div class="table-responsive">
+            <table class="table table-hover align-middle mb-0">
+                <thead class="table-light fw-bold text-danger text-uppercase small">
+                    <tr>
+                        <th class="ps-3" style="width: 60px;">STT</th>
+                        <th>Mã Container</th>
+                        <th>Hãng Tàu</th>
+                        <th>Phân Loại Chất Lượng</th>
+                        <th>Hạng Mục Ghi Nhận Lỗi</th>
+                        <th>Mức Độ Ưu Tiên</th>
+                    </tr>
+                </thead>
+                <tbody id="tbody-suachua">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalGiamDinh" data-bs-backdrop="static" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-primary text-white py-3">
+                <h5 class="modal-title fw-bold" id="modalGiamDinhTitle">Phiếu Giám Định Kỹ Thuật</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <form id="formGiamDinh">
+                    <input type="hidden" id="gd_rowIndex">
+                    
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Mã Container</label>
+                        <input type="text" class="form-control text-uppercase fw-bold text-primary" id="gd_container" required placeholder="Ví dụ: MSKU1234567">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Hãng Tàu</label>
+                        <input type="text" class="form-control text-uppercase" id="gd_hangtau" required placeholder="MSK, CMA, ONE, HMM...">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-primary">Tình Trạng Chi Tiết (Chọn nhiều mục)</label>
+                        <div class="p-3 border rounded bg-light" id="gd_tinhtrang_list" style="max-height: 180px; overflow-y: auto;">
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Móp méo thành vách"> <label class="form-check-label small">Móp méo thành vách</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Rách vách/Thủng nóc"> <label class="form-check-label small">Rách vách / Thủng nóc</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Hư hỏng đà gầm"> <label class="form-check-label small">Hư hỏng đà gầm</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Kẹt/Gãy khóa cửa"> <label class="form-check-label small">Cơ cấu khóa cửa kẹt / gãy</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Hư hỏng mặt sàn"> <label class="form-check-label small">Hư hỏng tấm sàn gỗ</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Bẩn/Hôi mùi"> <label class="form-check-label small">Bẩn hóa chất / Hôi mùi nặng</label></div>
+                            <div class="form-check mb-1"><input class="form-check-input gd-checkbox" type="checkbox" value="Rỉ sét nặng"> <label class="form-check-label small">Bong tróc rỉ sét nặng</label></div>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Trạng Thái Phân Loại</label>
+                        <select class="form-select fw-bold" id="gd_trangthai" required>
+                            <option value="A" class="text-success">A - Tốt</option>
+                            <option value="B" class="text-warning">B - Bình thường</option>
+                            <option value="C" class="text-danger">C - Tệ</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label small fw-bold text-dark">Ghi Chú</label>
+                        <textarea class="form-control small" id="gd_ghichu" rows="2" placeholder="Nhập thêm chi tiết vị trí hoặc kích thước lỗi nếu có..."></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer bg-light py-2">
+                <button type="button" class="btn btn-secondary btn-sm rounded-2" data-bs-dismiss="modal">Đóng</button>
+                <button type="button" class="btn btn-primary btn-sm px-3 rounded-2" onclick="saveGiamDinh()">
+                    <i class="bi bi-floppy me-1"></i> Lưu lại
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal fade" id="modalLichSuGiamDinh" tabindex="-1">
+    <div class="modal-dialog modal-lg modal-dialog-centered">
+        <div class="modal-content border-0 shadow">
+            <div class="modal-header bg-dark text-white py-3">
+                <h5 class="modal-title fw-bold small-title"><i class="bi bi-clock-history me-2"></i> Nhật Ký Cập Nhật Hệ Thống</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0" style="max-height: 400px; overflow-y: auto;">
+                <table class="table table-striped table-hover align-middle mb-0">
+                    <thead class="table-light sticky-top small text-uppercase">
+                        <tr>
+                            <th class="ps-3" style="width: 60px;">STT</th>
+                            <th>Mã Container</th>
+                            <th>Tình Trạng Thao Tác</th>
+                            <th>Trạng Thái</th>
+                            <th>Thời Gian Ghi Nhận</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-lichsu-giamdinh">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
             <!-- adding Giao nhan-->
             <div id="page-giaonhan" class="page">
     <div class="card p-3 mb-3 shadow-sm border-0">
