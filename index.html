@@ -11,7 +11,6 @@
 </head>
 <body>
 
-    <!-- LOADER -->
     <div id="loader">
         <div class="text-center">
             <div class="spinner-border text-primary"></div>
@@ -19,7 +18,6 @@
         </div>
     </div>
 
-    <!-- MÀN HÌNH ĐĂNG NHẬP -->
     <div id="login-screen">
         <div class="login-box">
             <div class="text-center mb-4">
@@ -41,9 +39,7 @@
         </div>
     </div>
 
-    <!-- HỆ THỐNG CHÍNH -->
     <div id="app-screen">
-        <!-- SIDEBAR -->
         <div class="sidebar">
             <div class="sidebar-brand"><i class="bi bi-layers-fill text-primary me-2"></i> CONTAINER DEPOT</div>
             <div class="p-3 mb-2" style="background: rgba(255,255,255,0.05);">
@@ -56,14 +52,12 @@
                 
                 <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Nghiệp vụ</div>
                 
-                <!-- TẠM ẨN: Hai dòng này đã được cấu hình ẩn vĩnh viễn với mọi vai trò theo yêu cầu -->
                 <a class="nav-link role-section view-nhap d-none" style="display:none !important;" onclick="switchPage('page-cont-nhap')"><i class="bi bi-box-arrow-in-right"></i> QL. Nhập Bãi / Vị trí</a>
                 <a class="nav-link role-section view-cap d-none" style="display:none !important;" onclick="switchPage('page-cont-cap')"><i class="bi bi-box-arrow-up-right"></i> QL. Cấp Rỗng</a>
                 
                 <a class="nav-link role-section view-dieudo" onclick="switchPage('page-quanlylenh')"> <i class="bi bi-clipboard-check"></i> QL. Lệnh</a>
                 <a class="nav-link text-white role-section view-giaonhan" onclick="switchPage('page-giaonhan')"><i class="bi bi-truck me-2"></i> QL. Giao Nhận Rỗng</a>
                 
-                <!-- GIÁM ĐỊNH VÀ SỬA CHỮA -->
                 <div id="menu-giamdinh-wrapper">
                     <hr class="text-white-50 my-2">
                     <div class="sidebar-dropdown">
@@ -82,7 +76,6 @@
                     </div>
                 </div>
 
-                <!-- Admin Tools -->
                 <div class="role-section view-admin">
                     <div class="px-3 mt-3 mb-1 small fw-bold text-uppercase" style="color: #6c7293;">Quản trị</div>
                     <a class="nav-link" onclick="switchPage('page-users')"><i class="bi bi-people"></i> Tài khoản NV</a>
@@ -92,14 +85,12 @@
             </div>
         </div>
 
-        <!-- MAIN CONTENT -->
         <div class="main-content">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="fw-bold m-0" id="page-title">Dashboard Tổng Quan</h4>
                 <div class="text-muted fw-bold" id="current-date"></div>
             </div>
             
-            <!-- TRANG DASHBOARD -->
             <div id="page-dashboard" class="page active">
                 <div class="row">
                     <div class="col-md-6 mb-4">
@@ -111,7 +102,6 @@
                 </div>
             </div>
 
-            <!-- TRANG QUẢN LÝ GIAO NHẬN -->
             <div id="page-giaonhan" class="page">
                 <div class="card shadow-sm p-3">
                     <div class="d-flex justify-content-between align-items-center border-bottom pb-2 mb-3">
@@ -124,7 +114,7 @@
                             <button class="btn btn-success btn-sm" onclick="openGiaoNhanModalExplicit(currentGiaoNhanTab)">
                                 <i class="bi bi-plus-circle me-1"></i> Lập phiếu EIR
                             </button>
-                            <button class="btn btn-warning btn-sm text-dark fw-bold" onclick="openDeXuatHaModal('', '', '', '')">
+                            <button class="btn btn-warning btn-sm text-darkfw-bold" onclick="openDeXuatHaModal('', '', '', '')">
                                 <i class="bi bi-lightning-charge me-1"></i> Đề Xuất Hạ
                             </button>
                             <button class="btn btn-info btn-sm text-white" onclick="openTraCuuModalExplicit()">
@@ -155,25 +145,14 @@
                 </div>
             </div>
 
-            <!-- TRANG QUẢN LÝ TÌNH TRẠNG GIÁM ĐỊNH -->
             <div id="page-quanlytinhtrang" class="page">
                 <div class="card shadow-sm p-3">
-                    <div class="d-flex justify-content-between align-items-center mb-3">
-                        <h5 class="fw-bold text-dark m-0"><i class="bi bi-activity text-primary me-2"></i>Danh Sách Giám Định Container</h5>
-                        <button class="btn btn-primary btn-sm" onclick="openTaoGiamDinhModal()">
-                            <i class="bi bi-plus-square me-1"></i> Tạo Phiếu Giám Định
-                        </button>
-                    </div>
+                    <h5 class="fw-bold text-dark mb-3"><i class="bi bi-activity text-primary me-2"></i>Danh Sách Giám Định Container</h5>
                     <div class="table-responsive">
                         <table class="table table-striped align-middle">
                             <thead class="table-dark">
                                 <tr>
-                                    <th>STT</th>
-                                    <th>Mã Container</th>
-                                    <th>Hãng Tàu</th>
-                                    <th>Chi Tiết Tình Trạng</th>
-                                    <th>Cần Sửa Chữa</th>
-                                    <th>Phân Loại</th>
+                                    <th>STT</th><th>Mã Container</th><th>Hãng Tàu</th><th>Chi Tiết Tình Trạng</th><th>Cần Sửa Chữa</th><th>Phân Loại</th>
                                 </tr>
                             </thead>
                             <tbody id="tbody-giamdinh"></tbody>
@@ -182,7 +161,6 @@
                 </div>
             </div>
 
-            <!-- TRANG SỬA CHỮA -->
             <div id="page-suachua" class="page">
                 <div class="card shadow-sm p-3">
                     <h5 class="fw-bold text-dark mb-3"><i class="bi bi-wrench-amber text-warning me-2"></i>Danh Sách Container Chờ Sửa Chữa</h5>
@@ -199,7 +177,6 @@
                 </div>
             </div>
 
-            <!-- TRANG QUẢN LÝ LỆNH -->
             <div id="page-quanlylenh" class="page">
                 <div class="card shadow-sm p-3">
                     <h5 class="fw-bold text-dark mb-3">Danh Sách Quản Lý Lệnh Điều Độ</h5>
@@ -217,7 +194,6 @@
         </div>
     </div>
 
-    <!-- MODAL LẬP PHIẾU GIAO NHẬN EIR -->
     <div class="modal fade" id="modalGiaoNhan" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -250,7 +226,6 @@
         </div>
     </div>
 
-    <!-- MODAL ĐỀ XUẤT HẠ -->
     <div class="modal fade" id="modalDeXuatHa" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -277,7 +252,6 @@
         </div>
     </div>
 
-    <!-- MODAL TRA CỨU VỊ TRÍ -->
     <div class="modal fade" id="modalTraCuu" tabindex="-1" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
@@ -293,114 +267,6 @@
                     <div id="tc_ketqua" class="p-3 bg-light rounded border d-none text-center">
                         <span class="text-muted">Vị trí tìm thấy:</span> <strong class="text-danger">Khu A - Hàng 03 - Lớp 2</strong>
                     </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- MODAL TẠO/CẬP NHẬT GIÁM ĐỊNH CHI TIẾT (THEO PHÂN LOẠI ẢNH) -->
-    <div class="modal fade" id="modalGiamDinhChiTiet" tabindex="-1" aria-hidden="true">
-        <div class="modal-dialog modal-lg">
-            <div class="modal-content">
-                <div class="modal-header bg-primary text-white">
-                    <h5 class="modal-title fw-bold"><i class="bi bi-shield-plus me-2"></i>Cập Nhật Tình Trạng Chi Tiết Vỏ Container</h5>
-                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-                </div>
-                <div class="modal-body">
-                    <form id="form-giamdinh-chitiet">
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Mã Container</label>
-                                <input type="text" id="gd_macont" class="form-control text-uppercase" placeholder="VD: SOTU1234567" required>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Hãng Tàu</label>
-                                <input type="text" id="gd_hangtau" class="form-control text-uppercase" placeholder="VD: ONE, MAERSK..." required>
-                            </div>
-                        </div>
-
-                        <!-- DANH MỤC LỖI TÍCH CHỌN -->
-                        <div class="card bg-light p-3 mb-3">
-                            <h6 class="fw-bold text-secondary mb-2 border-bottom pb-1"><i class="bi bi-tools me-1"></i>Danh mục kiểm tra hư hỏng</h6>
-                            
-                            <div class="row">
-                                <!-- Kết cấu Gầm/Đáy -->
-                                <div class="col-md-4 mb-3">
-                                    <span class="fw-bold text-dark d-block mb-2 small text-uppercase">1. Kết cấu Gầm/Đáy</span>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Đáy biến dạng" id="l_day_bd">
-                                        <label class="form-check-label small" for="l_day_bd">Đáy biến dạng</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Sập rầm đáy" id="l_ram_sap">
-                                        <label class="form-check-label small" for="l_ram_sap">Sập rầm đáy</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Thủng sàn" id="l_thung_san">
-                                        <label class="form-check-label small" for="l_thung_san">Thủng ván sàn</label>
-                                    </div>
-                                </div>
-
-                                <!-- Vách / Trần -->
-                                <div class="col-md-4 mb-3">
-                                    <span class="fw-bold text-dark d-block mb-2 small text-uppercase">2. Vách / Trần / Góc</span>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Vách móp phồng" id="l_vach_mop">
-                                        <label class="form-check-label small" for="l_vach_mop">Vách móp phồng</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Rách vách" id="l_vach_rach">
-                                        <label class="form-check-label small" for="l_vach_rach">Rách/Thủng vách</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Trần móp biến dạng" id="l_tran_biendang">
-                                        <label class="form-check-label small" for="l_tran_biendang">Trần móp méo</label>
-                                    </div>
-                                </div>
-
-                                <!-- Cửa / Cơ cấu khóa -->
-                                <div class="col-md-4 mb-3">
-                                    <span class="fw-bold text-dark d-block mb-2 small text-uppercase">3. Cửa & Cơ cấu khóa</span>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Kẹt cửa khó đóng" id="l_ket_cua">
-                                        <label class="form-check-label small" for="l_ket_cua">Kẹt cửa khó đóng</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Hỏng gioăng cao su" id="l_hong_gioang">
-                                        <label class="form-check-label small" for="l_hong_gioang">Hỏng gioăng cao su</label>
-                                    </div>
-                                    <div class="form-check mb-1">
-                                        <input class="form-check-input chk-loi" type="checkbox" value="Bản lề/Thanh khóa cong" id="l_banle_cong">
-                                        <label class="form-check-label small" for="l_banle_cong">Bản lề/Thanh khóa cong</label>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row g-3 mb-3">
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Phân Loại Hạng (Trạng thái)</label>
-                                <select id="gd_phantang" class="form-select">
-                                    <option value="A">Hạng A (Vỏ sạch tốt)</option>
-                                    <option value="B">Hạng B (Móp nhẹ, đủ tiêu chuẩn đóng hàng)</option>
-                                    <option value="C">Hạng C (Hư hỏng nặng, chờ sửa chữa)</option>
-                                </select>
-                            </div>
-                            <div class="col-md-6">
-                                <label class="form-label small fw-bold">Yêu cầu vệ sinh bãi</label>
-                                <select id="gd_vesinh" class="form-select">
-                                    <option value="KHÔNG">Không cần quét dọn</option>
-                                    <option value="CÓ">Cần Quét/Rửa nước sạch</option>
-                                    <option value="HOA_CHAT">Cần tẩy rửa hóa chất/mùi</option>
-                                </select>
-                            </div>
-                        </div>
-
-                        <div class="text-end border-top pt-3">
-                            <button type="button" class="btn btn-secondary btn-sm me-2" data-bs-dismiss="modal">Hủy bỏ</button>
-                            <button type="button" class="btn btn-primary btn-sm fw-bold px-4" onclick="submitGiamDinhChiTiet()">Lưu Vào Hệ Thống</button>
-                        </div>
-                    </form>
                 </div>
             </div>
         </div>
